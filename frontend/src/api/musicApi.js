@@ -51,6 +51,7 @@ export const playlistsApi = {
 // ─── Other ────────────────────────────────────────────────────────
 export const statsApi = {
   get: () => api.get('/stats'),
+  weekly: () => api.get('/stats/weekly'),
 };
 
 export const searchApi = {

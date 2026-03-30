@@ -50,6 +50,8 @@ COVERS_DIR.mkdir(parents=True, exist_ok=True)
 AVATARS_DIR.mkdir(parents=True, exist_ok=True)
 
 JWT_ALGORITHM = "HS256"
+MAX_UPLOAD_SIZE_MB = 50
+MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 # ─── Password Hashing ────────────────────────────────────────────────
 
@@ -458,6 +460,8 @@ async def upload_song(
 
     async with aiofiles.open(file_path, 'wb') as out_file:
         content = await file.read()
+        if len(content) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(status_code=413, detail=f"Datei zu gross. Maximum: {MAX_UPLOAD_SIZE_MB} MB")
         await out_file.write(content)
 
     metadata = extract_metadata(file_path, original_filename=file.filename)
@@ -489,7 +493,7 @@ async def upload_song(
 
 
 @api_router.get("/songs")
-async def get_songs(request: Request, search: Optional[str] = None):
+async def get_songs(request: Request, search: Optional[str] = None, page: int = 1, limit: int = 50):
     user = await get_current_user(request)
     query = {"owner_id": user["_id"]}
     if search:
@@ -499,9 +503,12 @@ async def get_songs(request: Request, search: Optional[str] = None):
             {"album": {"$regex": search, "$options": "i"}},
             {"genre": {"$regex": search, "$options": "i"}},
         ]
-    songs = await db.songs.find(query, {"_id": 0}).sort("upload_date", -1).to_list(1000)
+    limit = min(limit, 200)
+    skip = (max(page, 1) - 1) * limit
+    songs = await db.songs.find(query, {"_id": 0}).sort("upload_date", -1).skip(skip).limit(limit).to_list(limit)
     # Check which songs the user has liked
-    user_likes = await db.likes.find({"user_id": user["_id"]}, {"music_id": 1}).to_list(5000)
+    song_ids = [s["id"] for s in songs]
+    user_likes = await db.likes.find({"user_id": user["_id"], "music_id": {"$in": song_ids}}, {"music_id": 1}).to_list(len(song_ids))
     liked_ids = {like["music_id"] for like in user_likes}
     for s in songs:
         s["is_liked"] = s["id"] in liked_ids
@@ -798,11 +805,19 @@ async def add_to_history(song_id: str, request: Request):
     song = await db.songs.find_one({"id": song_id})
     if not song:
         raise HTTPException(status_code=404, detail="Song nicht gefunden")
+    now = datetime.now(timezone.utc).isoformat()
     await db.history.update_one(
         {"user_id": user["_id"], "song_id": song_id},
-        {"$set": {"played_at": datetime.now(timezone.utc).isoformat()}, "$inc": {"play_count": 1}},
+        {"$set": {"played_at": now}, "$inc": {"play_count": 1}},
         upsert=True
     )
+    # Also log to detailed play_log for weekly stats
+    await db.play_log.insert_one({
+        "user_id": user["_id"],
+        "song_id": song_id,
+        "played_at": now,
+        "duration": song.get("duration", 0),
+    })
     return {"status": "ok"}
 
 
@@ -862,6 +877,105 @@ async def get_history_stats(request: Request):
         "unique_songs": len(history),
         "top_songs": top_songs,
         "top_artists": [{"name": a["_id"], "plays": a["total_plays"]} for a in top_artists],
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# WEEKLY STATS ("Jetzt hören")
+# ═══════════════════════════════════════════════════════════════════════
+
+def _get_week_start() -> str:
+    """Get ISO string of the start of the current week (Monday 00:00 UTC)."""
+    now = datetime.now(timezone.utc)
+    monday = now - timedelta(days=now.weekday())
+    return monday.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+
+@api_router.get("/stats/weekly")
+async def get_weekly_stats(request: Request):
+    """Personal weekly listening stats for 'Jetzt hören' dashboard card."""
+    user = await get_current_user(request)
+    week_start = _get_week_start()
+
+    # Get all play_log entries this week
+    week_logs = await db.play_log.find({
+        "user_id": user["_id"],
+        "played_at": {"$gte": week_start}
+    }).to_list(5000)
+
+    if not week_logs:
+        return {
+            "has_data": False,
+            "total_plays": 0,
+            "total_minutes": 0,
+            "top_songs": [],
+            "top_artists": [],
+            "new_discoveries": 0,
+            "week_start": week_start,
+        }
+
+    total_plays = len(week_logs)
+    total_seconds = sum(log.get("duration", 0) for log in week_logs)
+    total_minutes = round(total_seconds / 60, 1)
+
+    # Get unique song_ids played this week
+    week_song_ids = list({log["song_id"] for log in week_logs})
+
+    # Count plays per song
+    song_play_counts = {}
+    song_total_time = {}
+    for log in week_logs:
+        sid = log["song_id"]
+        song_play_counts[sid] = song_play_counts.get(sid, 0) + 1
+        song_total_time[sid] = song_total_time.get(sid, 0) + log.get("duration", 0)
+
+    # Get song details
+    songs_data = await db.songs.find({"id": {"$in": week_song_ids}}, {"_id": 0}).to_list(len(week_song_ids))
+    song_map = {s["id"]: s for s in songs_data}
+
+    # Top 5 songs
+    sorted_songs = sorted(song_play_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_songs = []
+    for sid, count in sorted_songs:
+        s = song_map.get(sid)
+        if s:
+            top_songs.append({
+                "id": sid,
+                "title": s["title"],
+                "artist": s["artist"],
+                "play_count": count,
+                "total_seconds": round(song_total_time.get(sid, 0), 1),
+            })
+
+    # Top 3 artists
+    artist_plays = {}
+    artist_time = {}
+    for log in week_logs:
+        s = song_map.get(log["song_id"])
+        if s:
+            artist = s.get("artist", "Unbekannt")
+            artist_plays[artist] = artist_plays.get(artist, 0) + 1
+            artist_time[artist] = artist_time.get(artist, 0) + log.get("duration", 0)
+    sorted_artists = sorted(artist_plays.items(), key=lambda x: x[1], reverse=True)[:3]
+    top_artists = [{"name": name, "play_count": count, "total_minutes": round(artist_time.get(name, 0) / 60, 1)} for name, count in sorted_artists]
+
+    # New discoveries (songs first played this week that weren't played before)
+    pre_week_songs = await db.play_log.distinct("song_id", {
+        "user_id": user["_id"],
+        "played_at": {"$lt": week_start}
+    })
+    new_discoveries = len(set(week_song_ids) - set(pre_week_songs))
+
+    return {
+        "has_data": True,
+        "total_plays": total_plays,
+        "total_minutes": total_minutes,
+        "total_hours": round(total_seconds / 3600, 1),
+        "top_songs": top_songs,
+        "top_artists": top_artists,
+        "new_discoveries": new_discoveries,
+        "unique_songs": len(week_song_ids),
+        "week_start": week_start,
     }
 
 
@@ -957,6 +1071,8 @@ async def startup():
         await db.songs.create_index("id", unique=True)
         await db.playlists.create_index("owner_id")
         await db.likes.create_index([("user_id", 1), ("music_id", 1)], unique=True)
+        await db.play_log.create_index([("user_id", 1), ("played_at", -1)])
+        await db.play_log.create_index("song_id")
         logger.info("Database indexes created")
     except Exception as e:
         logger.warning(f"Index creation issue (may already exist): {e}")

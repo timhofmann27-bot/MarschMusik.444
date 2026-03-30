@@ -3,6 +3,7 @@ import { songsApi, playlistsApi, statsApi, historyApi } from '../api/musicApi';
 import { useAuth } from '../context/AuthContext';
 import { Play, Music, ListMusic, HardDrive, Heart, Clock, Disc } from 'lucide-react';
 import { motion } from 'framer-motion';
+import WeeklyStatsCard from '../components/WeeklyStatsCard';
 
 const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
@@ -50,6 +51,9 @@ export default function Dashboard({ playSong, playPlaylist }) {
           ))}
         </div>
       )}
+
+      {/* "Jetzt hören" - Weekly Stats */}
+      <WeeklyStatsCard />
 
       {recentlyPlayed.length > 0 && (
         <div>
