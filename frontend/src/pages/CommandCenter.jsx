@@ -29,7 +29,7 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   
   const statCards = [
     {
-      label: 'GESAMT TRACKS',
+      label: 'TRACKS',
       value: stats?.total_songs || 0,
       icon: Music,
       color: 'text-military-green'
@@ -57,35 +57,35 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-military-green text-xl font-mono">LADE DATEN...</div>
+        <div className="text-military-green text-lg md:text-xl font-mono">LADE DATEN...</div>
       </div>
     );
   }
   
   return (
-    <div className="container mx-auto px-4 py-8 military-grid" data-testid="command-center">
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 military-grid" data-testid="command-center">
       {/* Header */}
-      <div className="mb-8 scanlines">
-        <h1 className="text-4xl font-bold text-military-green terminal-text mb-2 tracking-wider">
+      <div className="mb-4 md:mb-8 scanlines">
+        <h1 className="text-2xl md:text-4xl font-bold text-military-green terminal-text mb-1 md:mb-2 tracking-wider">
           KOMMANDO ZENTRALE
         </h1>
-        <p className="text-military-green/60 font-mono">SYSTEM STATUS: OPERATIONSBEREIT</p>
+        <p className="text-xs md:text-base text-military-green/60 font-mono">SYSTEM STATUS: OPERATIONSBEREIT</p>
       </div>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-8">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-black/50 border border-military-green/30 p-6 glow-border hud-corner">
-              <div className="flex items-center justify-between mb-4">
-                <Icon className={`w-8 h-8 ${stat.color}`} />
+            <div key={index} className="bg-black/50 border border-military-green/30 p-3 md:p-6 glow-border hud-corner">
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <Icon className={`w-6 h-6 md:w-8 md:h-8 ${stat.color}`} />
                 <div className="status-led"></div>
               </div>
-              <div className="text-3xl font-bold text-military-green font-mono mb-1">
+              <div className="text-xl md:text-3xl font-bold text-military-green font-mono mb-1">
                 {stat.value}
               </div>
-              <div className="text-sm text-military-green/60 font-mono tracking-wider">
+              <div className="text-xs md:text-sm text-military-green/60 font-mono tracking-wider">
                 {stat.label}
               </div>
             </div>
@@ -95,17 +95,17 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       
       {/* Recent Songs */}
       <div>
-        <h2 className="text-2xl font-bold text-military-green terminal-text mb-4 tracking-wider">
+        <h2 className="text-xl md:text-2xl font-bold text-military-green terminal-text mb-3 md:mb-4 tracking-wider">
           KÜRZLICH HINZUGEFÜGT
         </h2>
         {recentSongs.length === 0 ? (
-          <div className="bg-black/50 border border-military-green/30 p-12 text-center">
-            <Music className="w-16 h-16 text-military-green/30 mx-auto mb-4" />
-            <p className="text-military-green/60 font-mono">KEINE TRACKS VERFÜGBAR</p>
-            <p className="text-sm text-military-green/40 font-mono mt-2">LADE MUSIK HOCH UM ZU BEGINNEN</p>
+          <div className="bg-black/50 border border-military-green/30 p-8 md:p-12 text-center">
+            <Music className="w-12 h-12 md:w-16 md:h-16 text-military-green/30 mx-auto mb-3 md:mb-4" />
+            <p className="text-sm md:text-base text-military-green/60 font-mono">KEINE TRACKS VERFÜGBAR</p>
+            <p className="text-xs md:text-sm text-military-green/40 font-mono mt-2">LADE MUSIK HOCH UM ZU BEGINNEN</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
             {recentSongs.map((song) => (
               <SongCard 
                 key={song.id} 

@@ -77,44 +77,44 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
   
   return (
     <>
-      <div className="bg-black/50 border border-military-green/30 p-4 glow-border group" data-testid={`song-card-${song.id}`}>
+      <div className="bg-black/50 border border-military-green/30 p-3 md:p-4 glow-border group" data-testid={`song-card-${song.id}`}>
         {/* Cover/Icon */}
-        <div className="relative mb-4">
+        <div className="relative mb-3 md:mb-4">
           <div className="w-full aspect-square bg-military-green/10 border border-military-green/30 flex items-center justify-center">
-            <span className="text-6xl">🎵</span>
+            <span className="text-4xl md:text-6xl">🎵</span>
           </div>
           <button
             onClick={() => onPlay(song)}
-            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity flex items-center justify-center"
             data-testid={`play-song-${song.id}`}
           >
-            <div className="w-16 h-16 bg-military-green/30 border border-military-green rounded-full flex items-center justify-center hover:bg-military-green/50 transition">
-              <Play className="w-8 h-8 text-military-green ml-1" />
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-military-green/30 border border-military-green rounded-full flex items-center justify-center hover:bg-military-green/50 active:bg-military-green/50 transition">
+              <Play className="w-6 h-6 md:w-8 md:h-8 text-military-green ml-1" />
             </div>
           </button>
         </div>
         
         {/* Info */}
         <div className="mb-3">
-          <h3 className="text-military-green font-mono font-bold truncate mb-1">{song.title}</h3>
-          <p className="text-military-green/60 font-mono text-sm truncate">{song.artist}</p>
+          <h3 className="text-sm md:text-base text-military-green font-mono font-bold truncate mb-1">{song.title}</h3>
+          <p className="text-xs md:text-sm text-military-green/60 font-mono truncate">{song.artist}</p>
           {song.album && song.album !== 'Unbekannt' && (
-            <p className="text-military-green/40 font-mono text-xs truncate">{song.album}</p>
+            <p className="text-xs text-military-green/40 font-mono truncate">{song.album}</p>
           )}
         </div>
         
         {/* Meta */}
         <div className="flex items-center justify-between text-xs text-military-green/60 font-mono mb-3">
           <span>{formatDuration(song.duration)}</span>
-          <span>{song.genre !== 'Unbekannt' ? song.genre : ''}</span>
+          <span className="hidden sm:inline">{song.genre !== 'Unbekannt' ? song.genre : ''}</span>
         </div>
         
         {/* Actions */}
         <div className="flex items-center justify-between border-t border-military-green/20 pt-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2">
             <button
               onClick={handleLike}
-              className="p-1.5 hover:bg-military-green/10 rounded transition"
+              className="p-2 hover:bg-military-green/10 active:bg-military-green/10 rounded transition"
               data-testid={`like-song-${song.id}`}
             >
               <Heart className="w-4 h-4 text-military-green" />
@@ -125,7 +125,7 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
           <div className="flex items-center space-x-1">
             <button
               onClick={handleDownload}
-              className="p-1.5 hover:bg-military-green/10 rounded transition"
+              className="p-2 hover:bg-military-green/10 active:bg-military-green/10 rounded transition"
               title="Download"
               data-testid={`download-song-${song.id}`}
             >
@@ -133,7 +133,7 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
             </button>
             <button
               onClick={() => setIsEditDialogOpen(true)}
-              className="p-1.5 hover:bg-military-green/10 rounded transition"
+              className="p-2 hover:bg-military-green/10 active:bg-military-green/10 rounded transition"
               title="Bearbeiten"
               data-testid={`edit-song-${song.id}`}
             >
@@ -142,7 +142,7 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
             {showRemove ? (
               <button
                 onClick={onRemove}
-                className="p-1.5 hover:bg-red-900/30 rounded transition"
+                className="p-2 hover:bg-red-900/30 active:bg-red-900/30 rounded transition"
                 title="Entfernen"
               >
                 <X className="w-4 h-4 text-red-500" />
@@ -150,7 +150,7 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
             ) : (
               <button
                 onClick={handleDelete}
-                className="p-1.5 hover:bg-red-900/30 rounded transition"
+                className="p-2 hover:bg-red-900/30 active:bg-red-900/30 rounded transition"
                 title="Löschen"
                 data-testid={`delete-song-${song.id}`}
               >
@@ -161,59 +161,59 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
         </div>
       </div>
       
-      {/* Edit Dialog */}
+      {/* Edit Dialog - Mobile Optimized */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-black border-military-green/50">
+        <DialogContent className="bg-black border-military-green/50 w-[95vw] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-military-green font-mono text-xl">METADATEN BEARBEITEN</DialogTitle>
+            <DialogTitle className="text-military-green font-mono text-lg md:text-xl">METADATEN BEARBEITEN</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
+          <div className="space-y-3 md:space-y-4 mt-4">
             <div>
-              <Label className="text-military-green/80 font-mono">TITEL</Label>
+              <Label className="text-military-green/80 font-mono text-sm">TITEL</Label>
               <Input
                 value={editData.title}
                 onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-                className="bg-black/50 border-military-green/30 text-military-green font-mono"
+                className="bg-black/50 border-military-green/30 text-military-green font-mono mt-1"
               />
             </div>
             <div>
-              <Label className="text-military-green/80 font-mono">KÜNSTLER</Label>
+              <Label className="text-military-green/80 font-mono text-sm">KÜNSTLER</Label>
               <Input
                 value={editData.artist}
                 onChange={(e) => setEditData(prev => ({ ...prev, artist: e.target.value }))}
-                className="bg-black/50 border-military-green/30 text-military-green font-mono"
+                className="bg-black/50 border-military-green/30 text-military-green font-mono mt-1"
               />
             </div>
             <div>
-              <Label className="text-military-green/80 font-mono">ALBUM</Label>
+              <Label className="text-military-green/80 font-mono text-sm">ALBUM</Label>
               <Input
                 value={editData.album}
                 onChange={(e) => setEditData(prev => ({ ...prev, album: e.target.value }))}
-                className="bg-black/50 border-military-green/30 text-military-green font-mono"
+                className="bg-black/50 border-military-green/30 text-military-green font-mono mt-1"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
-                <Label className="text-military-green/80 font-mono">GENRE</Label>
+                <Label className="text-military-green/80 font-mono text-sm">GENRE</Label>
                 <Input
                   value={editData.genre}
                   onChange={(e) => setEditData(prev => ({ ...prev, genre: e.target.value }))}
-                  className="bg-black/50 border-military-green/30 text-military-green font-mono"
+                  className="bg-black/50 border-military-green/30 text-military-green font-mono mt-1"
                 />
               </div>
               <div>
-                <Label className="text-military-green/80 font-mono">JAHR</Label>
+                <Label className="text-military-green/80 font-mono text-sm">JAHR</Label>
                 <Input
                   type="number"
                   value={editData.year}
                   onChange={(e) => setEditData(prev => ({ ...prev, year: e.target.value }))}
-                  className="bg-black/50 border-military-green/30 text-military-green font-mono"
+                  className="bg-black/50 border-military-green/30 text-military-green font-mono mt-1"
                 />
               </div>
             </div>
             <Button
               onClick={handleUpdate}
-              className="w-full bg-military-green/20 border border-military-green/50 text-military-green hover:bg-military-green/30 font-mono"
+              className="w-full bg-military-green/20 border border-military-green/50 text-military-green hover:bg-military-green/30 font-mono h-11"
             >
               SPEICHERN
             </Button>

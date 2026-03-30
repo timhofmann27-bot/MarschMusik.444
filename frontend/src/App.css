@@ -95,8 +95,15 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
+}
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -110,6 +117,23 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 255, 65, 0.5);
+}
+
+/* Mobile Touch Optimization */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: rgba(0, 255, 65, 0.1);
+  }
+  
+  button, a {
+    touch-action: manipulation;
+  }
+}
+
+/* Prevent text selection on interactive elements (mobile) */
+.touch-manipulation {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Status LED */
