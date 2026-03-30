@@ -1,0 +1,79 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 5: Jewel & Luxury",
+  "mood": "Exclusive, premium, mysterious, solid. Dunkel mit Deutschland Vibe. Deep navy mixed with Heimat Gold and runic inspirations.",
+  "typography": {
+    "heading_font": "Cabinet Grotesk",
+    "body_font": "Outfit",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-black",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl font-bold tracking-tight",
+      "body": "text-base leading-relaxed",
+      "label": "text-xs tracking-[0.2em] uppercase font-bold text-[#94A3B8]"
+    }
+  },
+  "colors": {
+    "background": "#050810",
+    "surface": "#0C111C",
+    "surface_hover": "#131A2A",
+    "primary": "#C5A059",
+    "primary_hover": "#D4AF37",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#94A3B8",
+    "border": "#1E293B",
+    "danger": "#EF4444",
+    "glass_bg": "rgba(5, 8, 16, 0.7)",
+    "glass_border": "rgba(197, 160, 89, 0.15)"
+  },
+  "spacing_and_layout": {
+    "general": "Generous spacing. Use p-6, p-8, p-12. No cramped layouts.",
+    "dashboard_grid": "Bento Grid: grid-cols-1 md:grid-cols-3 lg:grid-cols-4. Tightly packed (gap-6) but spacious inside cards.",
+    "card_radius": "rounded-xl",
+    "button_radius": "rounded-full"
+  },
+  "surfaces_and_micro_themes": {
+    "audio_player": "Crystal Glassmorphism. backdrop-blur-2xl bg-[#050810]/80 border-t border-[#C5A059]/20. Fixed at bottom. Ensure high saturation blur.",
+    "sidebar": "Solid flat surface bg-[#050810] border-r border-white/5. No shadows.",
+    "playlist_cards": "No visible border or background initially. On hover, apply a subtle scale to the image and reveal a soft gold glow (shadow-[0_0_15px_rgba(197,160,89,0.15)])."
+  },
+  "components_instructions": {
+    "buttons": "Primary CTA uses bg-[#C5A059] text-[#050810] font-bold hover:bg-[#D4AF37]. Secondary uses bg-white/5 text-white hover:bg-white/10 border border-white/10.",
+    "inputs": "Shadcn standard but heavily customized: bg-[#0C111C] border border-[#1E293B] focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] text-white.",
+    "audio_controls": "Play/Pause button is prominent, rounded-full, and primary gold color. Other controls (shuffle, repeat, skip) are text_secondary, turning white on hover.",
+    "tables_tracklist": "Borderless. Hovering a track row changes bg to white/5 and displays a gold play icon on the left.",
+    "upload_station": "Dashed border border-[#1E293B]. On drag over, border turns to solid #C5A059 with a soft #C5A059/10 background fill."
+  },
+  "animations": {
+    "hover_state": "transition-all duration-300 ease-in-out",
+    "track_hover": "Hovering over tracklist item shows a subtle background highlight and shifts text slightly right (translate-x-1).",
+    "page_transition": "Fade in with a slight upward translation (translate-y-4 opacity-0 to translate-y-0 opacity-100) using framer-motion."
+  },
+  "media": {
+    "login_hero_bg": {
+      "url": "https://images.pexels.com/photos/12197169/pexels-photo-12197169.jpeg",
+      "description": "Minimalistic gold and black textured abstract background for login/register page. Add a bg-[#050810]/70 overlay so forms are readable."
+    },
+    "playlist_cover_1": {
+      "url": "https://images.pexels.com/photos/7505924/pexels-photo-7505924.jpeg",
+      "description": "Dark rippling water texture for abstract or algorithmic playlists."
+    },
+    "playlist_cover_2": {
+      "url": "https://images.unsplash.com/photo-1692553041081-6c4e2cbd30d7",
+      "description": "Dark forest filled with trees. Perfect for the 'Deutschland Vibe' / Heimat ambient playlists."
+    },
+    "default_user_avatar": {
+      "url": "https://images.unsplash.com/photo-1761437856299-af640f6e75ad",
+      "description": "Abstract golden spiral on black for default user profile avatar."
+    }
+  },
+  "icons_library": "lucide-react",
+  "instructions_to_main_agent": [
+    "MUST use Cabinet Grotesk for Headings and Outfit for Body. (Include Google Fonts / Fontshare links in index.html).",
+    "MUST strictly adhere to the dark navy (#050810) and Heimat Gold (#C5A059) color palette. Do not use generic gray or generic yellow.",
+    "Language is strictly German for all UI text (e.g., 'Startseite', 'Bibliothek', 'Hochladen', 'Suchen', 'Freunde').",
+    "Audio Player must be fixed at the bottom using Crystal Glassmorphism, overlaying the content without blocking it (add pb-[100px] to main wrapper).",
+    "Track rows should have the 'data-testid' attributes like 'track-play-button', 'upload-form-submit-button'.",
+    "All SVGs/Icons must use current color context. Do not hardcode hex values in icons."
+  ]
+}
