@@ -11,6 +11,7 @@ const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
 
 const UploadStation = () => {
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [currentFile, setCurrentFile] = useState(null);
   const [metadata, setMetadata] = useState({
@@ -56,6 +57,7 @@ const UploadStation = () => {
     if (!currentFile) return;
     
     setUploading(true);
+    setUploadProgress(0);
     try {
       const formData = new FormData();
       formData.append('file', currentFile);
@@ -66,12 +68,15 @@ const UploadStation = () => {
       if (metadata.genre) formData.append('genre', metadata.genre);
       if (metadata.year) formData.append('year', metadata.year);
       
-      const result = await uploadSong(formData);
+      const result = await uploadSong(formData, (progress) => {
+        setUploadProgress(progress);
+      });
       
       toast.success(`✓ ${result.title} erfolgreich hochgeladen!`);
       
       setUploadedFiles(prev => [...prev, { ...result, status: 'success' }]);
       setCurrentFile(null);
+      setUploadProgress(0);
       setMetadata({
         title: '',
         artist: '',
@@ -88,6 +93,7 @@ const UploadStation = () => {
       }]);
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
   
@@ -226,8 +232,25 @@ const UploadStation = () => {
                 className="w-full mt-4 md:mt-6 px-6 py-3 md:py-3 bg-military-green/20 border border-military-green/50 text-military-green hover:bg-military-green/30 active:bg-military-green/30 disabled:opacity-50 disabled:cursor-not-allowed transition font-mono tracking-wider text-sm md:text-base"
                 data-testid="upload-button"
               >
-                {uploading ? 'UPLOADING...' : 'MISSION STARTEN'}
+                {uploading ? `UPLOADING... ${uploadProgress}%` : 'MISSION STARTEN'}
               </button>
+              
+              {/* Upload Progress Bar */}
+              {uploading && (
+                <div className="mt-3">
+                  <div className="h-2 bg-military-green/20 rounded-full overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-military-green"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <p className="text-xs text-military-green/60 font-mono mt-1 text-center">
+                    {uploadProgress}% ABGESCHLOSSEN
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

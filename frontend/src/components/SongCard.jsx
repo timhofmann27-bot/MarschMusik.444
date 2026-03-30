@@ -79,9 +79,16 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
   };
   
   const formatDuration = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 MB';
+    const mb = bytes / (1024 * 1024);
+    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`;
   };
   
   return (
@@ -118,9 +125,22 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
         </div>
         
         {/* Meta */}
-        <div className="flex items-center justify-between text-xs text-military-green/60 font-mono mb-3">
-          <span>{formatDuration(song.duration)}</span>
-          <span className="hidden sm:inline">{song.genre !== 'Unbekannt' ? song.genre : ''}</span>
+        <div className="space-y-1 mb-3">
+          <div className="flex items-center justify-between text-xs text-military-green/60 font-mono">
+            <span className="flex items-center space-x-1">
+              <span className="text-military-green/40">⏱</span>
+              <span>{formatDuration(song.duration)}</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <span className="text-military-green/40">💾</span>
+              <span>{formatFileSize(song.file_size)}</span>
+            </span>
+          </div>
+          {song.genre && song.genre !== 'Unbekannt' && (
+            <div className="text-xs text-military-green/40 font-mono truncate">
+              {song.genre}
+            </div>
+          )}
         </div>
         
         {/* Actions */}

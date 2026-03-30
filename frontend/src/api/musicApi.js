@@ -4,10 +4,16 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Songs API
-export const uploadSong = async (formData) => {
+export const uploadSong = async (formData, onProgress) => {
   const response = await axios.post(`${API}/songs/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percentCompleted);
+      }
     },
   });
   return response.data;
