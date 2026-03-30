@@ -13,7 +13,6 @@ import os
 import logging
 import bcrypt
 import jwt
-import secrets
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import uuid
@@ -726,9 +725,18 @@ async def get_albums(request: Request):
 
 app.include_router(api_router)
 
+# Health check endpoint (must respond before MongoDB is ready)
+@app.get("/")
+async def health_check():
+    return {"status": "ok"}
+
+@app.get("/api/health")
+async def api_health():
+    return {"status": "ok"}
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.environ.get("FRONTEND_URL", "http://localhost:3000")],
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -736,33 +744,40 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    # Create indexes
-    await db.users.create_index("email", unique=True)
-    await db.login_attempts.create_index("identifier")
-    await db.songs.create_index("owner_id")
-    await db.songs.create_index("id", unique=True)
-    await db.playlists.create_index("owner_id")
-    await db.likes.create_index([("user_id", 1), ("music_id", 1)], unique=True)
+    try:
+        # Create indexes
+        await db.users.create_index("email", unique=True)
+        await db.login_attempts.create_index("identifier")
+        await db.songs.create_index("owner_id")
+        await db.songs.create_index("id", unique=True)
+        await db.playlists.create_index("owner_id")
+        await db.likes.create_index([("user_id", 1), ("music_id", 1)], unique=True)
+        logger.info("Database indexes created")
+    except Exception as e:
+        logger.warning(f"Index creation issue (may already exist): {e}")
 
-    # Seed admin
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@444hf.de")
-    admin_password = os.environ.get("ADMIN_PASSWORD", "HeimatFunk444!")
-    existing = await db.users.find_one({"email": admin_email})
-    if existing is None:
-        await db.users.insert_one({
-            "username": "Admin",
-            "email": admin_email,
-            "password_hash": hash_password(admin_password),
-            "bio": "Administrator",
-            "avatar_url": "",
-            "is_public": True,
-            "role": "admin",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-        logger.info(f"Admin user created: {admin_email}")
-    elif not verify_password(admin_password, existing["password_hash"]):
-        await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
-        logger.info("Admin password updated")
+    try:
+        # Seed admin
+        admin_email = os.environ.get("ADMIN_EMAIL", "admin@444hf.de")
+        admin_password = os.environ.get("ADMIN_PASSWORD", "HeimatFunk444!")
+        existing = await db.users.find_one({"email": admin_email})
+        if existing is None:
+            await db.users.insert_one({
+                "username": "Admin",
+                "email": admin_email,
+                "password_hash": hash_password(admin_password),
+                "bio": "Administrator",
+                "avatar_url": "",
+                "is_public": True,
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info(f"Admin user created: {admin_email}")
+        elif not verify_password(admin_password, existing["password_hash"]):
+            await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
+            logger.info("Admin password updated")
+    except Exception as e:
+        logger.warning(f"Admin seeding issue: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
