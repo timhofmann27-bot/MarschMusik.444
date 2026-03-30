@@ -13,6 +13,7 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
   const audioRef = useRef(null);
   
   const handleNext = useCallback(() => {
+    if (!playlist || !song) return;
     const currentIndex = playlist.findIndex(s => s.id === song.id);
     if (currentIndex < playlist.length - 1) {
       setCurrentSong(playlist[currentIndex + 1]);
@@ -23,6 +24,7 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
   }, [playlist, song, setCurrentSong, setIsPlaying]);
   
   const handlePrevious = useCallback(() => {
+    if (!playlist || !song) return;
     const currentIndex = playlist.findIndex(s => s.id === song.id);
     if (currentIndex > 0) {
       setCurrentSong(playlist[currentIndex - 1]);
@@ -40,7 +42,9 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
         setDuration(audio.duration);
         setLoading(false);
         if (isPlaying) {
-          audio.play().catch(e => console.error('Playback error:', e));
+          audio.play().catch(e => {
+            // Error handling - playback failed
+          });
         }
       };
       
@@ -68,14 +72,17 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
         audio.removeEventListener('loadstart', handleLoadStart);
       };
     }
-  }, [song, handleNext]);
+  }, [song, handleNext, isPlaying, isMuted, volume]);
   
   useEffect(() => {
     if (audioRef.current) {
+      const audio = audioRef.current;
       if (isPlaying) {
-        audioRef.current.play().catch(e => console.error('Playback error:', e));
+        audio.play().catch(e => {
+          // Error handling - playback failed
+        });
       } else {
-        audioRef.current.pause();
+        audio.pause();
       }
     }
   }, [isPlaying]);

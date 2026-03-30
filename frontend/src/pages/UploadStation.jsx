@@ -3,11 +3,9 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, CheckCircle, AlertCircle, Music, X } from 'lucide-react';
 import { uploadSong } from '../api/musicApi';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-
-const BYTES_PER_KB = 1024;
-const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
+import { BYTES_PER_KB, BYTES_PER_MB } from '../constants';
 
 const UploadStation = () => {
   const [uploading, setUploading] = useState(false);

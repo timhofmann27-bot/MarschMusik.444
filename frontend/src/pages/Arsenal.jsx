@@ -18,7 +18,10 @@ const Arsenal = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       setSongs(data);
       setFilteredSongs(data);
     } catch (error) {
-      // Error handling - silent fail for MVP
+      // Log error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load songs:', error);
+      }
     } finally {
       setLoading(false);
     }

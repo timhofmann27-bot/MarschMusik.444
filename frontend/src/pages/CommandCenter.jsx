@@ -4,6 +4,7 @@ import { getSongs, getStats } from '../api/musicApi';
 import SongCard from '../components/SongCard';
 import SongCardSkeleton from '../components/SongCardSkeleton';
 import { motion } from 'framer-motion';
+import { fadeInUpVariants, scaleInVariants, ANIMATION_DURATION, STAGGER_DELAY } from '../constants';
 
 const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   const [stats, setStats] = useState(null);
@@ -19,7 +20,10 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       setStats(statsData);
       setRecentSongs(songs.slice(0, 6));
     } catch (error) {
-      // Error handling - silent fail for MVP
+      // Log error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load data:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -61,9 +65,10 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       {/* Header */}
       <motion.div 
         className="mb-4 md:mb-8 scanlines"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        variants={fadeInUpVariants}
+        initial="initial"
+        animate="animate"
+        transition={{ duration: ANIMATION_DURATION }}
       >
         <h1 className="text-2xl md:text-4xl font-bold text-military-green terminal-text mb-1 md:mb-2 tracking-wider">
           KOMMANDO ZENTRALE
@@ -79,9 +84,10 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
             <motion.div 
               key={stat.label} 
               className="bg-black/50 border border-military-green/30 p-3 md:p-6 glow-border hud-corner"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
+              variants={scaleInVariants}
+              initial="initial"
+              animate="animate"
+              transition={{ delay: index * STAGGER_DELAY, duration: ANIMATION_DURATION }}
               whileHover={{ scale: 1.02 }}
             >
               <div className="flex items-center justify-between mb-2 md:mb-4">

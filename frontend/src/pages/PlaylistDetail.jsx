@@ -38,7 +38,10 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       );
       setSongs(playlistSongs.filter(s => s !== null));
     } catch (error) {
-      // Error handling - silent fail for MVP
+      // Log error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load playlist data:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,11 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       setSearchQuery('');
       setIsDialogOpen(false);
     } catch (error) {
-      alert(error.response?.data?.detail || 'Fehler beim Hinzufügen');
+      const message = error.response?.data?.detail || 'Fehler beim Hinzufügen';
+      alert(message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to add song:', error);
+      }
     }
   };
   
@@ -64,7 +71,10 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       await removeSongFromPlaylist(id, songId);
       await loadData();
     } catch (error) {
-      // Error handling - silent fail for MVP
+      // Log error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to remove song:', error);
+      }
     }
   };
   

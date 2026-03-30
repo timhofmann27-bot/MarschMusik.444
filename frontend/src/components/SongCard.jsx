@@ -3,6 +3,7 @@ import { Play, Download, Trash2, Edit2, Heart, X } from 'lucide-react';
 import { deleteSong, downloadSong, updateSong, toggleLike } from '../api/musicApi';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { BYTES_PER_MB, BYTES_PER_KB, SPRING_CONFIG } from '../constants';
 import {
   Dialog,
   DialogContent,
@@ -87,8 +88,8 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
   
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 MB';
-    const mb = bytes / (1024 * 1024);
-    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`;
+    const mb = bytes / BYTES_PER_MB;
+    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${(bytes / BYTES_PER_KB).toFixed(0)} KB`;
   };
   
   return (
@@ -97,7 +98,7 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
         className="bg-black/50 border border-military-green/30 p-3 md:p-4 glow-border group" 
         data-testid={`song-card-${song.id}`}
         whileHover={{ scale: 1.02, borderColor: 'rgba(0, 255, 65, 0.5)' }}
-        transition={{ type: 'spring', stiffness: 300 }}
+        transition={SPRING_CONFIG}
       >
         {/* Cover/Icon */}
         <div className="relative mb-3 md:mb-4">

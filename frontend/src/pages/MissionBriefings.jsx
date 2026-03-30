@@ -26,7 +26,10 @@ const MissionBriefings = () => {
       const data = await getPlaylists();
       setPlaylists(data);
     } catch (error) {
-      // Error handling - silent fail for MVP
+      // Log error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to load playlists:', error);
+      }
     } finally {
       setLoading(false);
     }
@@ -45,7 +48,10 @@ const MissionBriefings = () => {
       setIsDialogOpen(false);
       loadPlaylists();
     } catch (error) {
-      // Error handling - silent fail for MVP
+      // Log error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to create playlist:', error);
+      }
     }
   };
   
@@ -56,7 +62,10 @@ const MissionBriefings = () => {
         await deletePlaylist(id);
         loadPlaylists();
       } catch (error) {
-        // Error handling - silent fail for MVP
+        // Log error for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to delete playlist:', error);
+        }
       }
     }
   };

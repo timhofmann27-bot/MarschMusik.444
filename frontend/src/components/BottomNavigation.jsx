@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Music, Upload, List, Activity } from 'lucide-react';
+import { Home, Music, Upload, List } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const BottomNavigation = () => {
