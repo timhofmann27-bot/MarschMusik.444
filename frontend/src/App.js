@@ -10,6 +10,9 @@ import PlaylistDetailPage from './pages/PlaylistDetailPage';
 import Favoriten from './pages/Favoriten';
 import Suche from './pages/Suche';
 import Profil from './pages/Profil';
+import KuenstlerDetail from './pages/KuenstlerDetail';
+import AlbumDetail from './pages/AlbumDetail';
+import Verlauf from './pages/Verlauf';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import PlayerBar from './components/AudioPlayer';
@@ -68,6 +71,9 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<Dashboard playSong={playSong} playPlaylist={playPlaylist} />} />
           <Route path="/bibliothek" element={<Bibliothek playSong={playSong} />} />
+          <Route path="/kuenstler/:name" element={<KuenstlerDetail playSong={playSong} />} />
+          <Route path="/alben/:name" element={<AlbumDetail playSong={playSong} />} />
+          <Route path="/verlauf" element={<Verlauf playSong={playSong} />} />
           <Route path="/hochladen" element={<Hochladen />} />
           <Route path="/playlists" element={<Playlists />} />
           <Route path="/playlists/:id" element={<PlaylistDetailPage playSong={playSong} />} />

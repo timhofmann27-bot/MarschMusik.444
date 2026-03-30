@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Download, Shuffle, Repeat, ChevronUp, ChevronDown, Music } from 'lucide-react';
-import { songsApi } from '../api/musicApi';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Download, Shuffle, Repeat, ChevronUp, ChevronDown, Music, ListMusic, X } from 'lucide-react';
+import { songsApi, historyApi } from '../api/musicApi';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PlayerBar = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong, shuffle, setShuffle, repeatMode, setRepeatMode }) => {
@@ -9,9 +9,11 @@ const PlayerBar = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong, sh
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [showQueue, setShowQueue] = useState(false);
   const [loading, setLoading] = useState(false);
   const [interacted, setInteracted] = useState(false);
   const audioRef = useRef(null);
+  const trackedRef = useRef(null);
 
   const handleNext = useCallback(() => {
     if (!playlist?.length || !song) return;
@@ -66,6 +68,14 @@ const PlayerBar = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong, sh
     audio.addEventListener('play', onPlay);
     return () => { audio.removeEventListener('loadedmetadata', onLoaded); audio.removeEventListener('timeupdate', onTime); audio.removeEventListener('ended', onEnded); audio.removeEventListener('play', onPlay); };
   }, [song, handleNext, isPlaying, isMuted, volume, interacted, repeatMode]);
+
+  // Track play history
+  useEffect(() => {
+    if (song && isPlaying && song.id !== trackedRef.current) {
+      trackedRef.current = song.id;
+      historyApi.add(song.id).catch(() => {});
+    }
+  }, [song, isPlaying]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -190,8 +200,9 @@ const PlayerBar = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong, sh
                 </div>
               </div>
 
-              {/* Volume + download */}
+              {/* Volume + queue + download */}
               <div className="col-span-3 flex items-center justify-end gap-3">
+                <button onClick={() => setShowQueue(!showQueue)} className={`p-2 transition-all rounded-full ${showQueue ? 'text-hf-gold' : 'text-hf-text-muted hover:text-white'}`} data-testid="queue-button"><ListMusic size={16} /></button>
                 <button onClick={() => songsApi.download(song.id, song.filename)} className="p-2 text-hf-text-muted hover:text-white transition-all" data-testid="player-download"><Download size={16} /></button>
                 <button onClick={() => setIsMuted(!isMuted)} className="text-hf-text-muted hover:text-white transition-all">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
                 <input type="range" min="0" max="1" step="0.01" value={isMuted ? 0 : volume} onChange={e => { setVolume(parseFloat(e.target.value)); setIsMuted(false); }} className="w-24" />
@@ -199,6 +210,40 @@ const PlayerBar = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong, sh
             </div>
           </div>
         </div>
+
+        {/* Queue Panel */}
+        <AnimatePresence>
+          {showQueue && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute bottom-full right-4 mb-2 w-80 max-h-80 bg-hf-surface border border-hf-border rounded-xl shadow-2xl overflow-hidden z-50"
+              data-testid="queue-panel"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-hf-border">
+                <span className="text-sm font-bold text-white">Warteschlange</span>
+                <button onClick={() => setShowQueue(false)} className="text-hf-text-muted hover:text-white"><X size={16} /></button>
+              </div>
+              <div className="overflow-y-auto max-h-64">
+                {playlist.map((s, i) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setCurrentSong(s); setIsPlaying(true); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/5 transition-all ${s.id === song.id ? 'bg-hf-gold/10' : ''}`}
+                  >
+                    <div className="w-6 text-center text-xs text-hf-text-muted">{s.id === song.id ? <Play size={12} className="text-hf-gold mx-auto" /> : i + 1}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-xs font-medium truncate ${s.id === song.id ? 'text-hf-gold' : 'text-white'}`}>{s.title}</div>
+                      <div className="text-[10px] text-hf-text-muted truncate">{s.artist}</div>
+                    </div>
+                    <span className="text-[10px] text-hf-text-muted">{fmt(s.duration)}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </>
   );

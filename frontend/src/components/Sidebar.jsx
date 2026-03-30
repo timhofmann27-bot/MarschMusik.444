@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Library, Upload, ListMusic, Heart, Search, User, LogOut } from 'lucide-react';
+import { Home, Library, Upload, ListMusic, Heart, Search, User, LogOut, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/hochladen', icon: Upload, label: 'Hochladen' },
   { to: '/playlists', icon: ListMusic, label: 'Playlists' },
   { to: '/favoriten', icon: Heart, label: 'Favoriten' },
+  { to: '/verlauf', icon: Clock, label: 'Verlauf' },
 ];
 
 export default function Sidebar() {

@@ -719,6 +719,93 @@ async def get_albums(request: Request):
     return [{"name": a["_id"]["album"], "artist": a["_id"]["artist"], "song_count": a["song_count"], "total_duration": round(a["total_duration"], 1)} for a in albums]
 
 
+@api_router.get("/albums/{album_name}/songs")
+async def get_album_songs(album_name: str, request: Request):
+    user = await get_current_user(request)
+    songs = await db.songs.find(
+        {"owner_id": user["_id"], "album": {"$regex": f"^{album_name}$", "$options": "i"}},
+        {"_id": 0}
+    ).to_list(500)
+    return [format_song(s) for s in songs]
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# PLAY HISTORY
+# ═══════════════════════════════════════════════════════════════════════
+
+@api_router.post("/history/{song_id}")
+async def add_to_history(song_id: str, request: Request):
+    user = await get_current_user(request)
+    song = await db.songs.find_one({"id": song_id})
+    if not song:
+        raise HTTPException(status_code=404, detail="Song nicht gefunden")
+    await db.history.update_one(
+        {"user_id": user["_id"], "song_id": song_id},
+        {"$set": {"played_at": datetime.now(timezone.utc).isoformat()}, "$inc": {"play_count": 1}},
+        upsert=True
+    )
+    return {"status": "ok"}
+
+
+@api_router.get("/history")
+async def get_history(request: Request, limit: int = 20):
+    user = await get_current_user(request)
+    history = await db.history.find({"user_id": user["_id"]}).sort("played_at", -1).limit(limit).to_list(limit)
+    song_ids = [h["song_id"] for h in history]
+    songs = await db.songs.find({"id": {"$in": song_ids}}, {"_id": 0}).to_list(500)
+    song_map = {s["id"]: format_song(s) for s in songs}
+    result = []
+    for h in history:
+        s = song_map.get(h["song_id"])
+        if s:
+            s["played_at"] = h.get("played_at", "")
+            s["play_count"] = h.get("play_count", 1)
+            result.append(s)
+    return result
+
+
+@api_router.get("/history/stats")
+async def get_history_stats(request: Request):
+    user = await get_current_user(request)
+    total_plays = 0
+    history = await db.history.find({"user_id": user["_id"]}).to_list(5000)
+    total_plays = sum(h.get("play_count", 1) for h in history)
+
+    # Top songs
+    top_songs_pipeline = [
+        {"$match": {"user_id": user["_id"]}},
+        {"$sort": {"play_count": -1}},
+        {"$limit": 10}
+    ]
+    top_history = await db.history.aggregate(top_songs_pipeline).to_list(10)
+    top_song_ids = [h["song_id"] for h in top_history]
+    top_songs_data = await db.songs.find({"id": {"$in": top_song_ids}}, {"_id": 0}).to_list(10)
+    song_map = {s["id"]: s for s in top_songs_data}
+    top_songs = []
+    for h in top_history:
+        s = song_map.get(h["song_id"])
+        if s:
+            top_songs.append({"title": s["title"], "artist": s["artist"], "play_count": h.get("play_count", 1)})
+
+    # Top artists
+    top_artists_pipeline = [
+        {"$match": {"user_id": user["_id"]}},
+        {"$lookup": {"from": "songs", "localField": "song_id", "foreignField": "id", "as": "song"}},
+        {"$unwind": "$song"},
+        {"$group": {"_id": "$song.artist", "total_plays": {"$sum": "$play_count"}}},
+        {"$sort": {"total_plays": -1}},
+        {"$limit": 5}
+    ]
+    top_artists = await db.history.aggregate(top_artists_pipeline).to_list(5)
+
+    return {
+        "total_plays": total_plays,
+        "unique_songs": len(history),
+        "top_songs": top_songs,
+        "top_artists": [{"name": a["_id"], "plays": a["total_plays"]} for a in top_artists],
+    }
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # APP SETUP
 # ═══════════════════════════════════════════════════════════════════════

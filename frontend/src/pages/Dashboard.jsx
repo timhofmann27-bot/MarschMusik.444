@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { songsApi, playlistsApi, statsApi } from '../api/musicApi';
+import { songsApi, playlistsApi, statsApi, historyApi } from '../api/musicApi';
 import { useAuth } from '../context/AuthContext';
-import { Play, Music, ListMusic, HardDrive, Heart } from 'lucide-react';
+import { Play, Music, ListMusic, HardDrive, Heart, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Dashboard({ playSong, playPlaylist }) {
@@ -9,11 +9,13 @@ export default function Dashboard({ playSong, playPlaylist }) {
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [stats, setStats] = useState(null);
+  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
 
   useEffect(() => {
     songsApi.getAll().then(r => setSongs(r.data.slice(0, 8))).catch(() => {});
     playlistsApi.getAll().then(r => setPlaylists(r.data.slice(0, 6))).catch(() => {});
     statsApi.get().then(r => setStats(r.data)).catch(() => {});
+    historyApi.getAll(6).then(r => setRecentlyPlayed(r.data)).catch(() => {});
   }, []);
 
   const formatDuration = (s) => {
@@ -48,6 +50,37 @@ export default function Dashboard({ playSong, playPlaylist }) {
               <div className="text-xs text-hf-text-muted uppercase tracking-widest mt-1">{label}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Recently Played */}
+      {recentlyPlayed.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <Clock size={20} className="text-hf-gold" /> Zuletzt gehoert
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {recentlyPlayed.map((song) => (
+              <button
+                key={song.id}
+                onClick={() => playSong(song, recentlyPlayed)}
+                className="group flex items-center gap-3 bg-hf-surface hover:bg-hf-surface-hover border border-hf-border rounded-xl p-3 text-left transition-all duration-300"
+                data-testid={`recent-${song.id}`}
+              >
+                <div className="w-12 h-12 bg-hf-bg rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                  <Music size={18} className="text-hf-border" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                    <Play size={14} className="text-hf-gold" />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-white truncate">{song.title}</div>
+                  <div className="text-xs text-hf-text-muted truncate">{song.artist}</div>
+                </div>
+                <div className="text-xs text-hf-text-muted">{song.play_count}x</div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

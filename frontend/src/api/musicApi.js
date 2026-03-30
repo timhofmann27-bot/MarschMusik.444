@@ -64,6 +64,13 @@ export const artistsApi = {
 
 export const albumsApi = {
   getAll: () => api.get('/albums'),
+  getSongs: (name) => api.get(`/albums/${encodeURIComponent(name)}/songs`),
+};
+
+export const historyApi = {
+  getAll: (limit = 20) => api.get('/history', { params: { limit } }),
+  add: (songId) => api.post(`/history/${songId}`),
+  getStats: () => api.get('/history/stats'),
 };
 
 export const usersApi = {
