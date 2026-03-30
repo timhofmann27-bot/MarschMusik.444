@@ -73,11 +73,11 @@ export default function Verlauf({ playSong }) {
       {tab === 'recent' && !loading && (
         <div className="space-y-1">
           {history.map((song) => (
-            <div key={`${song.id}-${song.played_at}`} className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`history-track-${song.id}`}>
-              <button onClick={() => playSong(song, history)} className="w-8 text-center">
+            <div key={`${song.id}-${song.played_at}`} className="group flex items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`history-track-${song.id}`}>
+              <button onClick={() => playSong(song, history)} className="w-8 text-center flex-shrink-0">
                 <Play size={16} className="text-hf-text-muted group-hover:text-hf-gold mx-auto transition-colors" />
               </button>
-              <div className="w-10 h-10 bg-hf-surface rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-hf-surface rounded-lg items-center justify-center flex-shrink-0 hidden sm:flex">
                 <Disc size={18} className="text-hf-gold/25" />
               </div>
               <div className="flex-1 min-w-0">
@@ -85,8 +85,8 @@ export default function Verlauf({ playSong }) {
                 <div className="text-xs text-hf-text-muted truncate">{song.artist}</div>
               </div>
               <div className="text-xs text-hf-text-muted hidden sm:block">{song.play_count}x</div>
-              <div className="text-xs text-hf-text-muted">{formatDate(song.played_at)}</div>
-              <div className="text-xs text-hf-text-muted w-12 text-right">{formatDuration(song.duration)}</div>
+              <div className="text-xs text-hf-text-muted hidden sm:block">{formatDate(song.played_at)}</div>
+              <div className="text-xs text-hf-text-muted w-10 sm:w-12 text-right flex-shrink-0">{formatDuration(song.duration)}</div>
             </div>
           ))}
           {history.length === 0 && (

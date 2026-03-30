@@ -63,22 +63,25 @@ export default function KuenstlerDetail({ playSong }) {
 
       <div className="space-y-1">
         {songs.map((song, i) => (
-          <div key={song.id} className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`artist-track-${song.id}`}>
-            <div className="w-8 text-center text-sm text-hf-text-muted group-hover:hidden">{i + 1}</div>
-            <button onClick={() => playSong(song, songs)} className="w-8 text-center hidden group-hover:block">
+          <div key={song.id} className="group flex items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`artist-track-${song.id}`}>
+            <div className="w-6 sm:w-8 text-center text-sm text-hf-text-muted group-hover:hidden hidden sm:block">{i + 1}</div>
+            <button onClick={() => playSong(song, songs)} className="w-6 sm:w-8 text-center hidden group-hover:block">
               <Play size={16} className="text-hf-gold mx-auto" />
             </button>
-            <div className="w-10 h-10 bg-hf-surface rounded-lg flex items-center justify-center flex-shrink-0">
+            <button onClick={() => playSong(song, songs)} className="sm:hidden w-8 flex-shrink-0 text-center">
+              <Play size={14} className="text-hf-text-muted mx-auto" />
+            </button>
+            <div className="w-10 h-10 bg-hf-surface rounded-lg items-center justify-center flex-shrink-0 hidden sm:flex">
               <Disc size={18} className="text-hf-gold/25" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-white truncate">{song.title}</div>
               <div className="text-xs text-hf-text-muted truncate">{song.album}</div>
             </div>
-            <button onClick={() => handleLike(song)} className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => handleLike(song)} className="p-1.5 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity">
               <Heart size={16} className={song.is_liked ? 'fill-hf-gold text-hf-gold' : 'text-hf-text-muted hover:text-white'} />
             </button>
-            <div className="text-xs text-hf-text-muted w-12 text-right">{formatDuration(song.duration)}</div>
+            <div className="text-xs text-hf-text-muted w-10 sm:w-12 text-right flex-shrink-0">{formatDuration(song.duration)}</div>
           </div>
         ))}
       </div>

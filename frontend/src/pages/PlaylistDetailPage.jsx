@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { playlistsApi, songsApi } from '../api/musicApi';
-import { Play, ArrowLeft, Music, Trash2, Clock, Plus, X } from 'lucide-react';
+import { Play, ArrowLeft, Music, Trash2, Clock, Plus, X, Disc } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -60,13 +60,13 @@ export default function PlaylistDetailPage({ playSong }) {
 
   return (
     <motion.div {...fadeIn} className="space-y-6">
-      <div className="flex items-start gap-6">
+      <div className="flex items-start gap-3 sm:gap-6">
         <button onClick={() => navigate('/playlists')} className="p-2 rounded-xl hover:bg-white/5 transition-all mt-1" data-testid="back-button">
           <ArrowLeft size={20} className="text-hf-text-muted" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="playlist-detail-title">{playlist.name}</h1>
-          {playlist.description && <p className="text-hf-text-muted mt-1">{playlist.description}</p>}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-bold text-white tracking-tight truncate" data-testid="playlist-detail-title">{playlist.name}</h1>
+          {playlist.description && <p className="text-hf-text-muted mt-1 text-sm truncate">{playlist.description}</p>}
           <div className="flex items-center gap-3 mt-2 text-xs text-hf-text-muted">
             <span>{playlist.songs?.length || 0} Songs</span>
             <span>&middot;</span>
@@ -75,10 +75,10 @@ export default function PlaylistDetailPage({ playSong }) {
         </div>
         <button
           onClick={loadAllSongs}
-          className="bg-hf-gold hover:bg-hf-gold-hover text-hf-bg font-bold px-4 py-2 rounded-full text-sm flex items-center gap-2 transition-all"
+          className="bg-hf-gold hover:bg-hf-gold-hover text-hf-bg font-bold px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm flex items-center gap-1 sm:gap-2 transition-all flex-shrink-0"
           data-testid="add-songs-button"
         >
-          <Plus size={14} /> Songs hinzufuegen
+          <Plus size={14} /> <span className="hidden sm:inline">Songs</span> hinzufuegen
         </button>
       </div>
 
@@ -94,20 +94,23 @@ export default function PlaylistDetailPage({ playSong }) {
 
       <div className="space-y-1">
         {(playlist.songs || []).map((song, i) => (
-          <div key={song.id} className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`pl-track-${song.id}`}>
-            <div className="w-8 text-center text-sm text-hf-text-muted group-hover:hidden">{i + 1}</div>
-            <button onClick={() => playSong(song, playlist.songs)} className="w-8 text-center hidden group-hover:block" data-testid={`pl-track-play-${song.id}`}>
+          <div key={song.id} className="group flex items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`pl-track-${song.id}`}>
+            <div className="w-6 sm:w-8 text-center text-sm text-hf-text-muted group-hover:hidden hidden sm:block">{i + 1}</div>
+            <button onClick={() => playSong(song, playlist.songs)} className="w-6 sm:w-8 text-center hidden group-hover:block" data-testid={`pl-track-play-${song.id}`}>
               <Play size={16} className="text-hf-gold mx-auto" />
             </button>
-            <div className="w-10 h-10 bg-hf-surface rounded-lg flex items-center justify-center flex-shrink-0">
-              <Music size={16} className="text-hf-border" />
+            <button onClick={() => playSong(song, playlist.songs)} className="sm:hidden w-8 flex-shrink-0 text-center">
+              <Play size={14} className="text-hf-text-muted mx-auto" />
+            </button>
+            <div className="w-10 h-10 bg-hf-surface rounded-lg items-center justify-center flex-shrink-0 hidden sm:flex">
+              <Disc size={18} className="text-hf-gold/25" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-white truncate">{song.title}</div>
               <div className="text-xs text-hf-text-muted truncate">{song.artist}</div>
             </div>
-            <div className="text-xs text-hf-text-muted w-12 text-right">{formatDuration(song.duration)}</div>
-            <button onClick={() => handleRemoveSong(song.id)} className="opacity-0 group-hover:opacity-100 p-1.5 transition-opacity" data-testid={`pl-remove-${song.id}`}>
+            <div className="text-xs text-hf-text-muted w-10 sm:w-12 text-right flex-shrink-0">{formatDuration(song.duration)}</div>
+            <button onClick={() => handleRemoveSong(song.id)} className="hidden sm:block opacity-0 group-hover:opacity-100 p-1.5 transition-opacity" data-testid={`pl-remove-${song.id}`}>
               <Trash2 size={14} className="text-hf-text-muted hover:text-red-400" />
             </button>
           </div>
