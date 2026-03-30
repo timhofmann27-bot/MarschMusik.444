@@ -454,14 +454,20 @@ async def upload_song(
     if file_ext not in allowed_extensions:
         raise HTTPException(status_code=400, detail="Ungültiges Dateiformat. Erlaubt: MP3, FLAC, OGG, WAV, M4A")
 
+    # Early size check via Content-Length header
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail=f"Datei zu gross. Maximum: {MAX_UPLOAD_SIZE_MB} MB")
+
     file_id = str(uuid.uuid4())
     filename = f"{file_id}{file_ext}"
     file_path = AUDIO_DIR / filename
 
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE_BYTES:
+        raise HTTPException(status_code=413, detail=f"Datei zu gross. Maximum: {MAX_UPLOAD_SIZE_MB} MB")
+
     async with aiofiles.open(file_path, 'wb') as out_file:
-        content = await file.read()
-        if len(content) > MAX_UPLOAD_SIZE_BYTES:
-            raise HTTPException(status_code=413, detail=f"Datei zu gross. Maximum: {MAX_UPLOAD_SIZE_MB} MB")
         await out_file.write(content)
 
     metadata = extract_metadata(file_path, original_filename=file.filename)

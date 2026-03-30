@@ -8,21 +8,21 @@ Private Spotify-aehnliche Musikstreaming-Plattform (444.HEIMAT-FUNK Music / 444H
 - **Backend**: FastAPI, Motor (Async MongoDB), `mutagen` fuer Audio-Metadaten, `bcrypt` + `PyJWT` fuer Auth
 - **Storage**: Lokaler Dateispeicher `/app/backend/uploads/`, MongoDB fuer Metadaten
 - **Auth**: JWT (httpOnly Cookies) + bcrypt, Brute-Force-Schutz
+- **DB Collections**: users, songs, playlists, likes, history, play_log, login_attempts
 
 ## Implemented Features
-- [x] Phase 1: Auth, UI-Redesign, Dashboard, Bibliothek, Upload, Playlists, Favoriten, Suche, Profil, Player (30. Maerz 2026)
-- [x] Phase 2: Kuenstler-/Album-Detailseiten, Wiedergabeverlauf mit Statistiken, Queue-Ansicht, navigierbare Bibliothek (30. Maerz 2026)
-- [x] Deployment-Fixes: Health-Check, CORS, .gitignore (30. Maerz 2026)
-- [x] Code Quality: Refactored AudioPlayer (extracted useAudioPlayer hook), refactored extract_metadata, fixed all React hook deps, removed hardcoded secrets, extracted constants (30. Maerz 2026)
-- [x] Metadata-Fix: extract_metadata uses original filename as fallback (not UUID), auto-migration on startup, admin migration endpoint, rounded duration, orphaned song owner_id fix (30. Maerz 2026)
-- [x] Cover-Art-Placeholder: Vinyl Disc icon (lucide-react Disc) across all pages (30. Maerz 2026)
-- [x] PWA Icons: Custom logo integrated as favicon, apple-touch-icon, manifest icons (30. Maerz 2026)
-- [x] Pre-Launch Audit Report: Security, Performance, UX, Emergent-Kompatibilitaet (/app/memory/AUDIT_REPORT.md) (30. Maerz 2026)
+- [x] Phase 1: Auth, UI-Redesign, Dashboard, Bibliothek, Upload, Playlists, Favoriten, Suche, Profil, Player
+- [x] Phase 2: Kuenstler-/Album-Detailseiten, Wiedergabeverlauf, Queue-Ansicht, navigierbare Bibliothek
+- [x] Deployment-Fixes: Health-Check, CORS, .gitignore
+- [x] Code Quality: useAudioPlayer hook, refactored extract_metadata, fixed React hook deps, removed hardcoded secrets
+- [x] Metadata-Fix: extract_metadata uses original filename, auto-migration, admin endpoint, rounded duration, orphan fix
+- [x] Cover-Art-Placeholder: Vinyl Disc icon across all pages
+- [x] PWA Icons: Custom logo as favicon, apple-touch-icon, manifest icons
+- [x] Pre-Launch Audit Report: /app/memory/AUDIT_REPORT.md (Score 8.13/10, GO fuer MVP)
+- [x] Security Hardening: 50MB upload limit (Content-Length + body check), CORS restricted, pagination (page/limit)
+- [x] "Jetzt hoeren" Weekly Stats: WeeklyStatsCard with animated counters, progress rings, top songs/artists, new discoveries badge, play_log tracking
 
 ## Upcoming Tasks
-- [ ] P1: Upload-Dateigroessen-Limit (50MB)
-- [ ] P1: CORS auf spezifische Domain einschraenken
-- [ ] P1: Pagination fuer grosse Bibliotheken
 - [ ] P1: Mobile-Responsive-Test (alle Views auf 375px)
 
 ## Backlog
