@@ -262,7 +262,7 @@ async def register(data: RegisterRequest, response: Response):
 async def login(data: LoginRequest, request: Request, response: Response):
     email = data.email.strip().lower()
     ip = request.client.host if request.client else "unknown"
-    identifier = f"{ip}:{email}"
+    identifier = email  # Use email only (IP unreliable behind load balancers)
 
     # Brute force check
     attempt = await db.login_attempts.find_one({"identifier": identifier})
@@ -276,9 +276,11 @@ async def login(data: LoginRequest, request: Request, response: Response):
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(data.password, user["password_hash"]):
         # Increment failed attempts
+        current = await db.login_attempts.find_one({"identifier": identifier})
+        new_count = (current.get("count", 0) if current else 0) + 1
         await db.login_attempts.update_one(
             {"identifier": identifier},
-            {"$inc": {"count": 1}, "$set": {"locked_until": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()}},
+            {"$set": {"count": new_count, "locked_until": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()}},
             upsert=True
         )
         raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
