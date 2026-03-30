@@ -21,14 +21,14 @@ Private Spotify-aehnliche Musikstreaming-Plattform (444.HEIMAT-FUNK Music / 444H
 - [x] Pre-Launch Audit Report: /app/memory/AUDIT_REPORT.md (Score 8.13/10, GO fuer MVP)
 - [x] Security Hardening: 50MB upload limit (Content-Length + body check), CORS restricted, pagination (page/limit)
 - [x] "Jetzt hoeren" Weekly Stats: WeeklyStatsCard with animated counters, progress rings, top songs/artists, new discoveries badge, play_log tracking
+- [x] Mobile-Responsive Optimization: All views optimized for 375px. Hidden row numbers/Disc icons/action buttons on mobile. Verlauf hides play count/time. Dashboard 2-col grid. PlaylistDetail responsive header.
 
 ## Upcoming Tasks
-- [ ] P1: Mobile-Responsive-Test (alle Views auf 375px)
-
-## Backlog
 - [ ] P2: Playlist-Sharing (View/Edit/Download-Rechte)
 - [ ] P2: Collaborative Playlists
 - [ ] P2: Follow/Unfollow System
+
+## Backlog
 - [ ] P3: Aktivitaetsstream, Hoerstatistiken, Genre-Browser, Empfehlungen
 - [ ] P3: HLS-Streaming, Offline-Modus, Direct Messages
 - [ ] P3: Object Storage statt lokalem Dateispeicher
