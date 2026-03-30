@@ -1,108 +1,73 @@
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = process.env.REACT_APP_BACKEND_URL;
+const api = axios.create({ baseURL: `${API}/api`, withCredentials: true });
 
-// Songs API
-export const uploadSong = async (formData, onProgress) => {
-  const response = await axios.post(`${API}/songs/upload`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-    onUploadProgress: (progressEvent) => {
-      if (onProgress && progressEvent.total) {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        onProgress(percentCompleted);
-      }
-    },
-  });
-  return response.data;
+// ─── Auth ─────────────────────────────────────────────────────────
+export const authApi = {
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  register: (username, email, password) => api.post('/auth/register', { username, email, password }),
+  logout: () => api.post('/auth/logout'),
+  me: () => api.get('/auth/me'),
+  refresh: () => api.post('/auth/refresh'),
 };
 
-export const getSongs = async (search = '') => {
-  const response = await axios.get(`${API}/songs`, {
-    params: { search }
-  });
-  return response.data;
+// ─── Songs ────────────────────────────────────────────────────────
+export const songsApi = {
+  getAll: (search) => api.get('/songs', { params: { search } }),
+  get: (id) => api.get(`/songs/${id}`),
+  upload: (formData, onProgress) => api.post('/songs/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => onProgress && e.total && onProgress(Math.round((e.loaded * 100) / e.total)),
+  }),
+  update: (id, data) => api.put(`/songs/${id}`, data),
+  delete: (id) => api.delete(`/songs/${id}`),
+  toggleLike: (id) => api.post(`/songs/${id}/like`),
+  getLiked: () => api.get('/songs/liked/all'),
+  streamUrl: (id) => `${API}/api/songs/${id}/stream`,
+  download: async (id, filename) => {
+    const res = await api.get(`/songs/${id}/download`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  },
 };
 
-export const getSong = async (songId) => {
-  const response = await axios.get(`${API}/songs/${songId}`);
-  return response.data;
+// ─── Playlists ────────────────────────────────────────────────────
+export const playlistsApi = {
+  getAll: () => api.get('/playlists'),
+  get: (id) => api.get(`/playlists/${id}`),
+  create: (data) => api.post('/playlists', data),
+  update: (id, data) => api.put(`/playlists/${id}`, data),
+  delete: (id) => api.delete(`/playlists/${id}`),
+  addSong: (plId, songId) => api.post(`/playlists/${plId}/songs/${songId}`),
+  removeSong: (plId, songId) => api.delete(`/playlists/${plId}/songs/${songId}`),
 };
 
-export const updateSong = async (songId, data) => {
-  const response = await axios.put(`${API}/songs/${songId}`, data);
-  return response.data;
+// ─── Other ────────────────────────────────────────────────────────
+export const statsApi = {
+  get: () => api.get('/stats'),
 };
 
-export const deleteSong = async (songId) => {
-  const response = await axios.delete(`${API}/songs/${songId}`);
-  return response.data;
+export const searchApi = {
+  search: (q) => api.get('/search', { params: { q } }),
 };
 
-export const streamSong = (songId) => {
-  return `${API}/songs/${songId}/stream`;
+export const artistsApi = {
+  getAll: () => api.get('/artists'),
+  getSongs: (name) => api.get(`/artists/${encodeURIComponent(name)}/songs`),
 };
 
-export const downloadSong = async (songId, filename) => {
-  const response = await axios.get(`${API}/songs/${songId}/download`, {
-    responseType: 'blob'
-  });
-  
-  // Create download link
-  const url = window.URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+export const albumsApi = {
+  getAll: () => api.get('/albums'),
 };
 
-export const toggleLike = async (songId) => {
-  const response = await axios.post(`${API}/songs/${songId}/like`);
-  return response.data;
-};
-
-// Playlists API
-export const createPlaylist = async (data) => {
-  const response = await axios.post(`${API}/playlists`, data);
-  return response.data;
-};
-
-export const getPlaylists = async () => {
-  const response = await axios.get(`${API}/playlists`);
-  return response.data;
-};
-
-export const getPlaylist = async (playlistId) => {
-  const response = await axios.get(`${API}/playlists/${playlistId}`);
-  return response.data;
-};
-
-export const updatePlaylist = async (playlistId, data) => {
-  const response = await axios.put(`${API}/playlists/${playlistId}`, data);
-  return response.data;
-};
-
-export const deletePlaylist = async (playlistId) => {
-  const response = await axios.delete(`${API}/playlists/${playlistId}`);
-  return response.data;
-};
-
-export const addSongToPlaylist = async (playlistId, songId) => {
-  const response = await axios.post(`${API}/playlists/${playlistId}/songs/${songId}`);
-  return response.data;
-};
-
-export const removeSongFromPlaylist = async (playlistId, songId) => {
-  const response = await axios.delete(`${API}/playlists/${playlistId}/songs/${songId}`);
-  return response.data;
-};
-
-// Stats API
-export const getStats = async () => {
-  const response = await axios.get(`${API}/stats`);
-  return response.data;
+export const usersApi = {
+  getProfile: () => api.get('/users/me'),
+  updateProfile: (data) => api.put('/users/me', data),
+  uploadAvatar: (formData) => api.post('/users/me/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
