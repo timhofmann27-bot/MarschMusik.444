@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { searchApi } from '../api/musicApi';
 import { Search as SearchIcon, Play, Music, ListMusic, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDebounce } from 'use-debounce';
-import { useEffect } from 'react';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
+
+const formatDuration = (s) => {
+  if (!s) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+};
 
 export default function Suche({ playSong }) {
   const [query, setQuery] = useState('');
@@ -14,19 +20,18 @@ export default function Suche({ playSong }) {
   useEffect(() => {
     if (!debouncedQuery.trim()) { setResults(null); return; }
     setLoading(true);
-    searchApi.search(debouncedQuery).then(r => setResults(r.data)).catch(() => {}).finally(() => setLoading(false));
+    searchApi.search(debouncedQuery)
+      .then(r => setResults(r.data))
+      .catch(() => setResults(null))
+      .finally(() => setLoading(false));
   }, [debouncedQuery]);
 
-  const formatDuration = (s) => {
-    if (!s) return '0:00';
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-  };
+  const hasResults = results && (results.songs?.length || results.artists?.length || results.playlists?.length);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div {...fadeIn} className="space-y-6">
       <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="search-title">Suche</h1>
 
-      {/* Search Input */}
       <div className="relative">
         <SearchIcon size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-hf-text-muted" />
         <input
@@ -43,7 +48,6 @@ export default function Suche({ playSong }) {
 
       {results && !loading && (
         <div className="space-y-8">
-          {/* Songs */}
           {results.songs?.length > 0 && (
             <div>
               <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><Music size={18} className="text-hf-gold" /> Songs</h2>
@@ -69,7 +73,6 @@ export default function Suche({ playSong }) {
             </div>
           )}
 
-          {/* Artists */}
           {results.artists?.length > 0 && (
             <div>
               <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><User size={18} className="text-hf-gold" /> Kuenstler</h2>
@@ -87,7 +90,6 @@ export default function Suche({ playSong }) {
             </div>
           )}
 
-          {/* Playlists */}
           {results.playlists?.length > 0 && (
             <div>
               <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><ListMusic size={18} className="text-hf-gold" /> Playlists</h2>
@@ -102,14 +104,12 @@ export default function Suche({ playSong }) {
             </div>
           )}
 
-          {/* No results */}
-          {results.songs?.length === 0 && results.artists?.length === 0 && results.playlists?.length === 0 && (
-            <div className="text-center py-12 text-hf-text-muted">Keine Ergebnisse fuer "{query}"</div>
+          {!hasResults && (
+            <div className="text-center py-12 text-hf-text-muted">Keine Ergebnisse fuer &quot;{query}&quot;</div>
           )}
         </div>
       )}
 
-      {/* Empty state */}
       {!results && !loading && (
         <div className="text-center py-16">
           <SearchIcon size={48} className="text-hf-border mx-auto mb-4" />

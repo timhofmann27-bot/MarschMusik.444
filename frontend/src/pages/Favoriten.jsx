@@ -1,20 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { songsApi } from '../api/musicApi';
 import { Heart, Play, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
+
+const formatDuration = (s) => {
+  if (!s) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+};
 
 export default function Favoriten({ playSong }) {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    songsApi.getLiked().then(r => setSongs(r.data)).catch(() => {}).finally(() => setLoading(false));
+  const loadFavorites = useCallback(async () => {
+    try {
+      const { data } = await songsApi.getLiked();
+      setSongs(data);
+    } catch {
+      /* network error */
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const formatDuration = (s) => {
-    if (!s) return '0:00';
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-  };
+  useEffect(() => { loadFavorites(); }, [loadFavorites]);
 
   const handleUnlike = async (song) => {
     await songsApi.toggleLike(song.id);
@@ -22,7 +33,7 @@ export default function Favoriten({ playSong }) {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div {...fadeIn} className="space-y-6">
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="favorites-title">
           <Heart size={28} className="inline text-hf-gold mr-2 fill-hf-gold" />

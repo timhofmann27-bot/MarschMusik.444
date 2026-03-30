@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usersApi } from '../api/musicApi';
 import { User, Edit3, Save, Music, ListMusic, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
 
 export default function Profil() {
   const { user: authUser } = useAuth();
@@ -12,13 +14,18 @@ export default function Profil() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
 
-  useEffect(() => {
-    usersApi.getProfile().then(r => {
-      setProfile(r.data);
-      setUsername(r.data.username);
-      setBio(r.data.bio || '');
-    }).catch(() => {});
+  const loadProfile = useCallback(async () => {
+    try {
+      const { data } = await usersApi.getProfile();
+      setProfile(data);
+      setUsername(data.username);
+      setBio(data.bio || '');
+    } catch {
+      /* network error */
+    }
   }, []);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const handleSave = async () => {
     try {
@@ -41,13 +48,18 @@ export default function Profil() {
     } catch { toast.error('Fehler beim Upload'); }
   };
 
+  const handleCancel = () => {
+    setEditing(false);
+    setUsername(profile.username);
+    setBio(profile.bio || '');
+  };
+
   if (!profile) return <div className="text-hf-text-muted text-center py-12">Laden...</div>;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-8 max-w-2xl">
+    <motion.div {...fadeIn} className="space-y-8 max-w-2xl">
       <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="profile-title">Profil</h1>
 
-      {/* Avatar + Info */}
       <div className="bg-hf-surface border border-hf-border rounded-2xl p-8">
         <div className="flex items-center gap-6 mb-6">
           <div className="relative group">
@@ -78,7 +90,6 @@ export default function Profil() {
           </div>
         </div>
 
-        {/* Bio */}
         <div className="mb-6">
           <label className="text-xs tracking-widest uppercase font-bold text-hf-text-muted mb-2 block">Bio</label>
           {editing ? (
@@ -93,14 +104,13 @@ export default function Profil() {
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
           {editing ? (
             <>
               <button onClick={handleSave} className="bg-hf-gold hover:bg-hf-gold-hover text-hf-bg font-bold px-6 py-2.5 rounded-full flex items-center gap-2 text-sm transition-all" data-testid="profile-save-button">
                 <Save size={16} /> Speichern
               </button>
-              <button onClick={() => { setEditing(false); setUsername(profile.username); setBio(profile.bio || ''); }} className="bg-white/5 text-white px-6 py-2.5 rounded-full text-sm hover:bg-white/10 transition-all">
+              <button onClick={handleCancel} className="bg-white/5 text-white px-6 py-2.5 rounded-full text-sm hover:bg-white/10 transition-all">
                 Abbrechen
               </button>
             </>
@@ -112,7 +122,6 @@ export default function Profil() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { icon: Music, label: 'Songs', value: profile.songs_count || 0 },

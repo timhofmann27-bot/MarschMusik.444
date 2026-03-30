@@ -1,9 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { playlistsApi, songsApi } from '../api/musicApi';
-import { Play, ArrowLeft, Music, Heart, Trash2, Clock, Plus } from 'lucide-react';
+import { Play, ArrowLeft, Music, Trash2, Clock, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
+
+const formatDuration = (s) => {
+  if (!s) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+};
 
 export default function PlaylistDetailPage({ playSong }) {
   const { id } = useParams();
@@ -12,16 +19,16 @@ export default function PlaylistDetailPage({ playSong }) {
   const [allSongs, setAllSongs] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
 
-  useEffect(() => {
-    loadPlaylist();
-  }, [id]);
-
-  const loadPlaylist = async () => {
+  const loadPlaylist = useCallback(async () => {
     try {
       const { data } = await playlistsApi.get(id);
       setPlaylist(data);
-    } catch { navigate('/playlists'); }
-  };
+    } catch {
+      navigate('/playlists');
+    }
+  }, [id, navigate]);
+
+  useEffect(() => { loadPlaylist(); }, [loadPlaylist]);
 
   const loadAllSongs = async () => {
     const { data } = await songsApi.getAll();
@@ -47,18 +54,12 @@ export default function PlaylistDetailPage({ playSong }) {
     } catch { toast.error('Fehler'); }
   };
 
-  const formatDuration = (s) => {
-    if (!s) return '0:00';
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-  };
-
   const totalDuration = (playlist?.songs || []).reduce((acc, s) => acc + (s.duration || 0), 0);
 
   if (!playlist) return <div className="text-hf-text-muted text-center py-12">Laden...</div>;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      {/* Header */}
+    <motion.div {...fadeIn} className="space-y-6">
       <div className="flex items-start gap-6">
         <button onClick={() => navigate('/playlists')} className="p-2 rounded-xl hover:bg-white/5 transition-all mt-1" data-testid="back-button">
           <ArrowLeft size={20} className="text-hf-text-muted" />
@@ -81,7 +82,6 @@ export default function PlaylistDetailPage({ playSong }) {
         </button>
       </div>
 
-      {/* Play all */}
       {playlist.songs?.length > 0 && (
         <button
           onClick={() => playSong(playlist.songs[0], playlist.songs)}
@@ -92,7 +92,6 @@ export default function PlaylistDetailPage({ playSong }) {
         </button>
       )}
 
-      {/* Song List */}
       <div className="space-y-1">
         {(playlist.songs || []).map((song, i) => (
           <div key={song.id} className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`pl-track-${song.id}`}>
@@ -118,7 +117,6 @@ export default function PlaylistDetailPage({ playSong }) {
         )}
       </div>
 
-      {/* Add Songs Modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAdd(false)}>
           <motion.div
@@ -127,7 +125,10 @@ export default function PlaylistDetailPage({ playSong }) {
             onClick={e => e.stopPropagation()}
             className="bg-hf-surface border border-hf-border rounded-2xl p-6 max-w-lg w-full max-h-[70vh] overflow-y-auto"
           >
-            <h3 className="text-lg font-bold text-white mb-4">Songs hinzufuegen</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Songs hinzufuegen</h3>
+              <button onClick={() => setShowAdd(false)} className="text-hf-text-muted hover:text-white"><X size={18} /></button>
+            </div>
             {allSongs.length === 0 ? (
               <p className="text-hf-text-muted text-sm">Keine weiteren Songs verfuegbar</p>
             ) : (
@@ -138,11 +139,7 @@ export default function PlaylistDetailPage({ playSong }) {
                       <div className="text-sm text-white truncate">{song.title}</div>
                       <div className="text-xs text-hf-text-muted">{song.artist}</div>
                     </div>
-                    <button
-                      onClick={() => handleAddSong(song.id)}
-                      className="p-2 bg-hf-gold/10 hover:bg-hf-gold/20 rounded-full transition-all"
-                      data-testid={`add-song-${song.id}`}
-                    >
+                    <button onClick={() => handleAddSong(song.id)} className="p-2 bg-hf-gold/10 hover:bg-hf-gold/20 rounded-full transition-all" data-testid={`add-song-${song.id}`}>
                       <Plus size={14} className="text-hf-gold" />
                     </button>
                   </div>

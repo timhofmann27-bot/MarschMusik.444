@@ -1,7 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { historyApi } from '../api/musicApi';
 import { Play, Music, Clock, TrendingUp, Award, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
+const MS_PER_MINUTE = 60_000;
+const MS_PER_HOUR = 3_600_000;
+const MS_PER_DAY = 86_400_000;
+
+const formatDuration = (s) => {
+  if (!s) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+};
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < MS_PER_MINUTE) return 'Gerade eben';
+  if (diff < MS_PER_HOUR) return `vor ${Math.floor(diff / MS_PER_MINUTE)} Min.`;
+  if (diff < MS_PER_DAY) return `vor ${Math.floor(diff / MS_PER_HOUR)} Std.`;
+  return new Date(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+}
 
 export default function Verlauf({ playSong }) {
   const [history, setHistory] = useState([]);
@@ -9,37 +28,28 @@ export default function Verlauf({ playSong }) {
   const [tab, setTab] = useState('recent');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      historyApi.getAll(50).then(r => setHistory(r.data)),
-      historyApi.getStats().then(r => setStats(r.data)),
-    ]).catch(() => {}).finally(() => setLoading(false));
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [histRes, statsRes] = await Promise.all([historyApi.getAll(50), historyApi.getStats()]);
+      setHistory(histRes.data);
+      setStats(statsRes.data);
+    } catch {
+      /* network error */
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const formatDuration = (s) => {
-    if (!s) return '0:00';
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-  };
-
-  const formatDate = (iso) => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const now = new Date();
-    const diff = now - d;
-    if (diff < 60000) return 'Gerade eben';
-    if (diff < 3600000) return `vor ${Math.floor(diff / 60000)} Min.`;
-    if (diff < 86400000) return `vor ${Math.floor(diff / 3600000)} Std.`;
-    return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
-  };
+  useEffect(() => { loadData(); }, [loadData]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div {...fadeIn} className="space-y-6">
       <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="history-title">
         <Clock size={28} className="inline text-hf-gold mr-2" />
         Verlauf
       </h1>
 
-      {/* Tabs */}
       <div className="flex gap-2">
         {[
           { id: 'recent', label: 'Zuletzt gehoert' },
@@ -60,11 +70,10 @@ export default function Verlauf({ playSong }) {
 
       {loading && <div className="text-hf-text-muted text-center py-12">Laden...</div>}
 
-      {/* Recent Tab */}
       {tab === 'recent' && !loading && (
         <div className="space-y-1">
-          {history.map((song, i) => (
-            <div key={`${song.id}-${i}`} className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`history-track-${song.id}`}>
+          {history.map((song) => (
+            <div key={`${song.id}-${song.played_at}`} className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer" data-testid={`history-track-${song.id}`}>
               <button onClick={() => playSong(song, history)} className="w-8 text-center">
                 <Play size={16} className="text-hf-text-muted group-hover:text-hf-gold mx-auto transition-colors" />
               </button>
@@ -90,10 +99,8 @@ export default function Verlauf({ playSong }) {
         </div>
       )}
 
-      {/* Stats Tab */}
       {tab === 'stats' && !loading && stats && (
         <div className="space-y-6">
-          {/* Overview */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-hf-surface border border-hf-border rounded-xl p-5">
               <BarChart3 size={20} className="text-hf-gold mb-2" />
@@ -107,7 +114,6 @@ export default function Verlauf({ playSong }) {
             </div>
           </div>
 
-          {/* Top Songs */}
           {stats.top_songs?.length > 0 && (
             <div>
               <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
@@ -115,7 +121,7 @@ export default function Verlauf({ playSong }) {
               </h2>
               <div className="space-y-2">
                 {stats.top_songs.map((s, i) => (
-                  <div key={i} className="flex items-center gap-4 px-4 py-3 bg-hf-surface rounded-xl">
+                  <div key={`${s.title}-${s.artist}`} className="flex items-center gap-4 px-4 py-3 bg-hf-surface rounded-xl">
                     <div className="w-8 h-8 bg-hf-gold/10 rounded-full flex items-center justify-center text-sm font-bold text-hf-gold">{i + 1}</div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-white truncate">{s.title}</div>
@@ -128,15 +134,14 @@ export default function Verlauf({ playSong }) {
             </div>
           )}
 
-          {/* Top Artists */}
           {stats.top_artists?.length > 0 && (
             <div>
               <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                 <Award size={18} className="text-hf-gold" /> Top Kuenstler
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {stats.top_artists.map((a, i) => (
-                  <div key={i} className="bg-hf-surface border border-hf-border rounded-xl p-4 text-center">
+                {stats.top_artists.map((a) => (
+                  <div key={a.name} className="bg-hf-surface border border-hf-border rounded-xl p-4 text-center">
                     <div className="text-sm font-semibold text-white">{a.name}</div>
                     <div className="text-xs text-hf-gold mt-1">{a.plays} Wiedergaben</div>
                   </div>

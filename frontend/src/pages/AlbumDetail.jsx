@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { albumsApi, songsApi } from '../api/musicApi';
-import { Play, ArrowLeft, Music, Heart, Disc } from 'lucide-react';
+import { Play, ArrowLeft, Heart, Disc } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
+
+const formatDuration = (s) => {
+  if (!s) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+};
 
 export default function AlbumDetail({ playSong }) {
   const { name } = useParams();
@@ -10,30 +17,31 @@ export default function AlbumDetail({ playSong }) {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    albumsApi.getSongs(decodeURIComponent(name))
-      .then(r => setSongs(r.data))
-      .catch(() => navigate('/bibliothek'))
-      .finally(() => setLoading(false));
+  const loadSongs = useCallback(async () => {
+    try {
+      const { data } = await albumsApi.getSongs(decodeURIComponent(name));
+      setSongs(data);
+    } catch {
+      navigate('/bibliothek');
+    } finally {
+      setLoading(false);
+    }
   }, [name, navigate]);
 
-  const formatDuration = (s) => {
-    if (!s) return '0:00';
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-  };
-
-  const totalDuration = songs.reduce((acc, s) => acc + (s.duration || 0), 0);
-  const artist = songs[0]?.artist || 'Unbekannt';
-  const year = songs[0]?.year;
+  useEffect(() => { loadSongs(); }, [loadSongs]);
 
   const handleLike = async (song) => {
     const { data } = await songsApi.toggleLike(song.id);
     setSongs(prev => prev.map(s => s.id === song.id ? { ...s, is_liked: data.is_liked } : s));
   };
 
+  const decodedName = decodeURIComponent(name);
+  const totalDuration = songs.reduce((acc, s) => acc + (s.duration || 0), 0);
+  const artist = songs[0]?.artist || 'Unbekannt';
+  const year = songs[0]?.year;
+
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      {/* Header */}
+    <motion.div {...fadeIn} className="space-y-6">
       <div className="flex items-center gap-5">
         <button onClick={() => navigate('/bibliothek')} className="p-2 rounded-xl hover:bg-white/5 transition-all" data-testid="album-back-button">
           <ArrowLeft size={20} className="text-hf-text-muted" />
@@ -42,19 +50,15 @@ export default function AlbumDetail({ playSong }) {
           <Disc size={36} className="text-hf-gold" />
         </div>
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="album-name">{decodeURIComponent(name)}</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="album-name">{decodedName}</h1>
           <p className="text-hf-text-muted text-sm mt-1">
-            {artist} {year && `· ${year}`} &middot; {songs.length} Songs &middot; {Math.floor(totalDuration / 60)} Min.
+            {artist}{year ? ` · ${year}` : ''} &middot; {songs.length} Songs &middot; {Math.floor(totalDuration / 60)} Min.
           </p>
         </div>
       </div>
 
       {songs.length > 0 && (
-        <button
-          onClick={() => playSong(songs[0], songs)}
-          className="bg-hf-gold hover:bg-hf-gold-hover text-hf-bg font-bold px-8 py-3 rounded-full text-sm transition-all flex items-center gap-2"
-          data-testid="album-play-all"
-        >
+        <button onClick={() => playSong(songs[0], songs)} className="bg-hf-gold hover:bg-hf-gold-hover text-hf-bg font-bold px-8 py-3 rounded-full text-sm transition-all flex items-center gap-2" data-testid="album-play-all">
           <Play size={18} /> Alle abspielen
         </button>
       )}

@@ -155,54 +155,93 @@ def format_user(user: dict) -> dict:
 
 # ─── Helper: extract audio metadata ──────────────────────────────────
 
-def extract_metadata(file_path: Path) -> dict:
-    metadata = {"title": file_path.stem, "artist": "Unbekannt", "album": "Unbekannt", "genre": "Unbekannt", "year": None, "duration": 0.0}
+TAG_MAP_VORBIS = {'title': 'title', 'artist': 'artist', 'album': 'album', 'genre': 'genre'}
+TAG_MAP_MP4 = {'\xa9nam': 'title', '\xa9ART': 'artist', '\xa9alb': 'album', '\xa9gen': 'genre'}
+YEAR_TAG_VORBIS = 'date'
+YEAR_TAG_MP4 = '\xa9day'
+
+AUDIO_LOADERS = {
+    '.mp3': lambda p: MP3(p),
+    '.flac': lambda p: FLAC(p),
+    '.ogg': lambda p: OggVorbis(p),
+    '.wav': lambda p: WAVE(p),
+    '.m4a': lambda p: MP4(p),
+    '.mp4': lambda p: MP4(p),
+}
+
+
+def _parse_year(raw: str) -> Optional[int]:
+    if not raw:
+        return None
     try:
-        ext = file_path.suffix.lower()
-        audio = None
-        if ext == '.mp3':
-            audio = MP3(file_path)
-            if audio.tags:
-                metadata["title"] = str(audio.tags.get('TIT2', metadata["title"]))
-                metadata["artist"] = str(audio.tags.get('TPE1', metadata["artist"]))
-                metadata["album"] = str(audio.tags.get('TALB', metadata["album"]))
-                metadata["genre"] = str(audio.tags.get('TCON', metadata["genre"]))
-                year_tag = audio.tags.get('TDRC')
-                if year_tag:
-                    metadata["year"] = int(str(year_tag).split('-')[0]) if str(year_tag) else None
-        elif ext == '.flac':
-            audio = FLAC(file_path)
-            if audio.tags:
-                metadata["title"] = audio.tags.get('title', [metadata["title"]])[0]
-                metadata["artist"] = audio.tags.get('artist', [metadata["artist"]])[0]
-                metadata["album"] = audio.tags.get('album', [metadata["album"]])[0]
-                metadata["genre"] = audio.tags.get('genre', [metadata["genre"]])[0]
-                year = audio.tags.get('date', [None])[0]
-                if year: metadata["year"] = int(year.split('-')[0])
-        elif ext == '.ogg':
-            audio = OggVorbis(file_path)
-            if audio.tags:
-                metadata["title"] = audio.tags.get('title', [metadata["title"]])[0]
-                metadata["artist"] = audio.tags.get('artist', [metadata["artist"]])[0]
-                metadata["album"] = audio.tags.get('album', [metadata["album"]])[0]
-                metadata["genre"] = audio.tags.get('genre', [metadata["genre"]])[0]
-                year = audio.tags.get('date', [None])[0]
-                if year: metadata["year"] = int(year.split('-')[0])
-        elif ext == '.wav':
-            audio = WAVE(file_path)
-        elif ext in ['.m4a', '.mp4']:
-            audio = MP4(file_path)
-            if audio.tags:
-                metadata["title"] = audio.tags.get('\xa9nam', [metadata["title"]])[0]
-                metadata["artist"] = audio.tags.get('\xa9ART', [metadata["artist"]])[0]
-                metadata["album"] = audio.tags.get('\xa9alb', [metadata["album"]])[0]
-                metadata["genre"] = audio.tags.get('\xa9gen', [metadata["genre"]])[0]
-                year = audio.tags.get('\xa9day', [None])[0]
-                if year: metadata["year"] = int(year.split('-')[0])
-        if audio:
-            metadata["duration"] = audio.info.length
+        return int(str(raw).split('-')[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def _extract_mp3_tags(audio, metadata: dict) -> None:
+    tags = audio.tags
+    if not tags:
+        return
+    metadata["title"] = str(tags.get('TIT2', metadata["title"]))
+    metadata["artist"] = str(tags.get('TPE1', metadata["artist"]))
+    metadata["album"] = str(tags.get('TALB', metadata["album"]))
+    metadata["genre"] = str(tags.get('TCON', metadata["genre"]))
+    metadata["year"] = _parse_year(tags.get('TDRC'))
+
+
+def _extract_vorbis_tags(audio, metadata: dict) -> None:
+    tags = audio.tags
+    if not tags:
+        return
+    for src_key, dest_key in TAG_MAP_VORBIS.items():
+        val = tags.get(src_key)
+        if val:
+            metadata[dest_key] = val[0]
+    metadata["year"] = _parse_year(tags.get(YEAR_TAG_VORBIS, [None])[0])
+
+
+def _extract_mp4_tags(audio, metadata: dict) -> None:
+    tags = audio.tags
+    if not tags:
+        return
+    for src_key, dest_key in TAG_MAP_MP4.items():
+        val = tags.get(src_key)
+        if val:
+            metadata[dest_key] = val[0]
+    metadata["year"] = _parse_year(tags.get(YEAR_TAG_MP4, [None])[0])
+
+
+TAG_EXTRACTORS = {
+    '.mp3': _extract_mp3_tags,
+    '.flac': _extract_vorbis_tags,
+    '.ogg': _extract_vorbis_tags,
+    '.m4a': _extract_mp4_tags,
+    '.mp4': _extract_mp4_tags,
+}
+
+
+def extract_metadata(file_path: Path) -> dict:
+    metadata = {
+        "title": file_path.stem,
+        "artist": "Unbekannt",
+        "album": "Unbekannt",
+        "genre": "Unbekannt",
+        "year": None,
+        "duration": 0.0,
+    }
+    ext = file_path.suffix.lower()
+    loader = AUDIO_LOADERS.get(ext)
+    if not loader:
+        return metadata
+    try:
+        audio = loader(file_path)
+        extractor = TAG_EXTRACTORS.get(ext)
+        if extractor:
+            extractor(audio, metadata)
+        metadata["duration"] = audio.info.length
     except Exception as e:
-        logger.error(f"Error extracting metadata: {e}")
+        logger.error(f"Error extracting metadata from {file_path.name}: {e}")
     return metadata
 
 # ─── Helper: format song for response ────────────────────────────────
@@ -260,7 +299,6 @@ async def register(data: RegisterRequest, response: Response):
 @api_router.post("/auth/login")
 async def login(data: LoginRequest, request: Request, response: Response):
     email = data.email.strip().lower()
-    ip = request.client.host if request.client else "unknown"
     identifier = email  # Use email only (IP unreliable behind load balancers)
 
     # Brute force check
@@ -407,11 +445,16 @@ async def upload_song(
         await out_file.write(content)
 
     metadata = extract_metadata(file_path)
-    if title: metadata["title"] = title
-    if artist: metadata["artist"] = artist
-    if album: metadata["album"] = album
-    if genre: metadata["genre"] = genre
-    if year: metadata["year"] = year
+    if title:
+        metadata["title"] = title
+    if artist:
+        metadata["artist"] = artist
+    if album:
+        metadata["album"] = album
+    if genre:
+        metadata["genre"] = genre
+    if year:
+        metadata["year"] = year
 
     file_size = file_path.stat().st_size
 
@@ -443,7 +486,7 @@ async def get_songs(request: Request, search: Optional[str] = None):
     songs = await db.songs.find(query, {"_id": 0}).sort("upload_date", -1).to_list(1000)
     # Check which songs the user has liked
     user_likes = await db.likes.find({"user_id": user["_id"]}, {"music_id": 1}).to_list(5000)
-    liked_ids = {l["music_id"] for l in user_likes}
+    liked_ids = {like["music_id"] for like in user_likes}
     for s in songs:
         s["is_liked"] = s["id"] in liked_ids
     return songs
@@ -534,7 +577,7 @@ async def toggle_like(song_id: str, request: Request):
 async def get_liked_songs(request: Request):
     user = await get_current_user(request)
     likes = await db.likes.find({"user_id": user["_id"]}).to_list(5000)
-    song_ids = [l["music_id"] for l in likes]
+    song_ids = [like["music_id"] for like in likes]
     songs = await db.songs.find({"id": {"$in": song_ids}}, {"_id": 0}).to_list(5000)
     for s in songs:
         s["is_liked"] = True
@@ -585,7 +628,7 @@ async def get_playlist(playlist_id: str, request: Request):
         songs = [song_map[sid] for sid in pl["song_ids"] if sid in song_map]
         # Check likes
         user_likes = await db.likes.find({"user_id": user["_id"]}, {"music_id": 1}).to_list(5000)
-        liked_ids = {l["music_id"] for l in user_likes}
+        liked_ids = {like["music_id"] for like in user_likes}
         for s in songs:
             s["is_liked"] = s["id"] in liked_ids
     result = format_playlist(pl)

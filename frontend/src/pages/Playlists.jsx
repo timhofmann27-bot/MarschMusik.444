@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { playlistsApi } from '../api/musicApi';
 import { ListMusic, Plus, Trash2, Lock, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
 
 export default function Playlists() {
   const [playlists, setPlaylists] = useState([]);
@@ -13,9 +15,16 @@ export default function Playlists() {
   const [isPublic, setIsPublic] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    playlistsApi.getAll().then(r => setPlaylists(r.data)).catch(() => {});
+  const loadPlaylists = useCallback(async () => {
+    try {
+      const { data } = await playlistsApi.getAll();
+      setPlaylists(data);
+    } catch {
+      /* network error */
+    }
   }, []);
+
+  useEffect(() => { loadPlaylists(); }, [loadPlaylists]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -39,7 +48,7 @@ export default function Playlists() {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div {...fadeIn} className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="playlists-title">Playlists</h1>
         <button
@@ -51,7 +60,6 @@ export default function Playlists() {
         </button>
       </div>
 
-      {/* Create Form */}
       {showCreate && (
         <motion.form
           initial={{ opacity: 0, height: 0 }}
@@ -79,7 +87,6 @@ export default function Playlists() {
         </motion.form>
       )}
 
-      {/* Playlist Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {playlists.map(pl => (
           <div
@@ -100,7 +107,7 @@ export default function Playlists() {
               </div>
             </div>
             <div className="font-semibold text-white truncate">{pl.name}</div>
-            <div className="text-xs text-hf-text-muted mt-1">{pl.song_ids?.length || 0} Songs {pl.description && `· ${pl.description}`}</div>
+            <div className="text-xs text-hf-text-muted mt-1">{pl.song_ids?.length || 0} Songs{pl.description ? ` · ${pl.description}` : ''}</div>
           </div>
         ))}
       </div>

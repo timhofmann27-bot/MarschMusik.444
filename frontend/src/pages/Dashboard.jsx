@@ -1,8 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { songsApi, playlistsApi, statsApi, historyApi } from '../api/musicApi';
 import { useAuth } from '../context/AuthContext';
 import { Play, Music, ListMusic, HardDrive, Heart, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
+
+const formatDuration = (s) => {
+  if (!s) return '0:00';
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+};
 
 export default function Dashboard({ playSong, playPlaylist }) {
   const { user } = useAuth();
@@ -18,16 +25,8 @@ export default function Dashboard({ playSong, playPlaylist }) {
     historyApi.getAll(6).then(r => setRecentlyPlayed(r.data)).catch(() => {});
   }, []);
 
-  const formatDuration = (s) => {
-    if (!s) return '0:00';
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
-
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-8">
-      {/* Greeting */}
+    <motion.div {...fadeIn} className="space-y-8">
       <div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white" data-testid="dashboard-greeting">
           Willkommen, <span className="text-hf-gold">{user?.username}</span>
@@ -35,7 +34,6 @@ export default function Dashboard({ playSong, playPlaylist }) {
         <p className="text-hf-text-muted mt-2">Deine private Musikwelt wartet auf dich.</p>
       </div>
 
-      {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
@@ -53,7 +51,6 @@ export default function Dashboard({ playSong, playPlaylist }) {
         </div>
       )}
 
-      {/* Recently Played */}
       {recentlyPlayed.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -84,7 +81,6 @@ export default function Dashboard({ playSong, playPlaylist }) {
         </div>
       )}
 
-      {/* Recent Songs */}
       {songs.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-white mb-4">Zuletzt hinzugefuegt</h2>
@@ -112,7 +108,6 @@ export default function Dashboard({ playSong, playPlaylist }) {
         </div>
       )}
 
-      {/* Playlists */}
       {playlists.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-white mb-4">Deine Playlists</h2>
@@ -139,7 +134,6 @@ export default function Dashboard({ playSong, playPlaylist }) {
         </div>
       )}
 
-      {/* Empty state */}
       {songs.length === 0 && (
         <div className="text-center py-16">
           <Music size={48} className="text-hf-border mx-auto mb-4" />

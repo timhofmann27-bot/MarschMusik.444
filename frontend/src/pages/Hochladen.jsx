@@ -5,6 +5,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
 
+const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
+
+function UploadStatusIcon({ status }) {
+  if (status === 'done') return <CheckCircle size={18} className="text-green-400" />;
+  if (status === 'error') return <AlertCircle size={18} className="text-red-400" />;
+  return <Music size={18} className="text-hf-gold" />;
+}
+
+function UploadStatusText({ status, progress }) {
+  if (status === 'done') return 'Erfolgreich hochgeladen';
+  if (status === 'error') return 'Fehler beim Hochladen';
+  return `${progress}%`;
+}
+
 export default function Hochladen() {
   const [uploads, setUploads] = useState([]);
 
@@ -35,11 +49,10 @@ export default function Hochladen() {
   });
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div {...fadeIn} className="space-y-6">
       <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight" data-testid="upload-title">Hochladen</h1>
       <p className="text-hf-text-muted">Lade deine Musik hoch. Unterstuetzte Formate: MP3, FLAC, OGG, WAV, M4A</p>
 
-      {/* Drop Zone */}
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 ${
@@ -55,7 +68,6 @@ export default function Hochladen() {
         <p className="text-hf-text-muted text-sm">oder klicken zum Auswaehlen</p>
       </div>
 
-      {/* Upload List */}
       <AnimatePresence>
         {uploads.map(u => (
           <motion.div
@@ -67,16 +79,12 @@ export default function Hochladen() {
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-hf-bg flex items-center justify-center flex-shrink-0">
-                {u.status === 'done' ? <CheckCircle size={18} className="text-green-400" /> :
-                 u.status === 'error' ? <AlertCircle size={18} className="text-red-400" /> :
-                 <Music size={18} className="text-hf-gold" />}
+                <UploadStatusIcon status={u.status} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white truncate">{u.name}</div>
                 <div className="text-xs text-hf-text-muted">
-                  {u.status === 'done' ? 'Erfolgreich hochgeladen' :
-                   u.status === 'error' ? 'Fehler beim Hochladen' :
-                   `${u.progress}%`}
+                  <UploadStatusText status={u.status} progress={u.progress} />
                 </div>
               </div>
             </div>
