@@ -1,34 +1,153 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+.App {
+  min-height: 100vh;
+  background-color: #0a0a0a;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Military Grid Background */
+.military-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Scanlines Effect */
+.scanlines {
+  position: relative;
+  overflow: hidden;
 }
 
-.App-link {
-    color: #61dafb;
+.scanlines::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(0, 255, 65, 0.02) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Glowing Border Effect */
+.glow-border {
+  box-shadow: 
+    0 0 5px rgba(0, 255, 65, 0.3),
+    inset 0 0 5px rgba(0, 255, 65, 0.1);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.glow-border:hover {
+  box-shadow: 
+    0 0 10px rgba(0, 255, 65, 0.5),
+    inset 0 0 10px rgba(0, 255, 65, 0.2);
+  border: 1px solid rgba(0, 255, 65, 0.5);
+}
+
+/* Terminal Text Effect */
+.terminal-text {
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+}
+
+/* Pulse Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Tactical Button */
+.tactical-button {
+  position: relative;
+  background: linear-gradient(135deg, #1a2f1a 0%, #0f1f0f 100%);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  color: #00ff41;
+  transition: all 0.3s ease;
+}
+
+.tactical-button:hover {
+  background: linear-gradient(135deg, #2a3f2a 0%, #1f2f1f 100%);
+  border: 1px solid rgba(0, 255, 65, 0.6);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+}
+
+.tactical-button:active {
+  transform: scale(0.98);
+}
+
+/* Waveform Container */
+.waveform-container {
+  width: 100%;
+  height: 60px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 65, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 65, 0.5);
+}
+
+/* Status LED */
+.status-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff41;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* HUD Corner */
+.hud-corner {
+  position: relative;
+}
+
+.hud-corner::before,
+.hud-corner::after {
+  content: '';
+  position: absolute;
+  border: 2px solid rgba(0, 255, 65, 0.3);
+}
+
+.hud-corner::before {
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.hud-corner::after {
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-left: none;
+  border-top: none;
 }
