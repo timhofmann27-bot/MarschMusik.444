@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { searchApi } from '../api/musicApi';
-import { Search as SearchIcon, Play, Music, ListMusic, User } from 'lucide-react';
+import { Search as SearchIcon, Play, Music, ListMusic, User, Disc } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDebounce } from 'use-debounce';
 
@@ -60,7 +60,8 @@ export default function Suche({ playSong }) {
                     data-testid={`search-song-${song.id}`}
                   >
                     <div className="w-10 h-10 bg-hf-surface rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Play size={14} className="text-hf-gold opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Disc size={16} className="text-hf-gold/25 opacity-100 group-hover:opacity-0 transition-opacity" />
+                      <Play size={14} className="text-hf-gold absolute opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-white truncate">{song.title}</div>

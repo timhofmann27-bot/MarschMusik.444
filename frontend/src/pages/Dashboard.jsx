@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { songsApi, playlistsApi, statsApi, historyApi } from '../api/musicApi';
 import { useAuth } from '../context/AuthContext';
-import { Play, Music, ListMusic, HardDrive, Heart, Clock } from 'lucide-react';
+import { Play, Music, ListMusic, HardDrive, Heart, Clock, Disc } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -65,7 +65,7 @@ export default function Dashboard({ playSong, playPlaylist }) {
                 data-testid={`recent-${song.id}`}
               >
                 <div className="w-12 h-12 bg-hf-bg rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-                  <Music size={18} className="text-hf-border" />
+                  <Disc size={20} className="text-hf-gold/20" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                     <Play size={14} className="text-hf-gold" />
                   </div>
@@ -93,7 +93,7 @@ export default function Dashboard({ playSong, playPlaylist }) {
                 data-testid={`song-card-${song.id}`}
               >
                 <div className="w-full aspect-square bg-hf-bg rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
-                  <Music size={32} className="text-hf-border" />
+                  <Disc size={40} className="text-hf-gold/20" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
                     <div className="w-12 h-12 bg-hf-gold rounded-full flex items-center justify-center shadow-lg">
                       <Play size={20} className="text-hf-bg ml-0.5" />

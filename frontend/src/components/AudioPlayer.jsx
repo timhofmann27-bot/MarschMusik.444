@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Download, Shuffle, Repeat, ChevronUp, ChevronDown, Music, ListMusic, X } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Download, Shuffle, Repeat, ChevronUp, ChevronDown, Music, ListMusic, X, Disc } from 'lucide-react';
 import { songsApi } from '../api/musicApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioPlayer, formatTime } from '../hooks/useAudioPlayer';
@@ -92,7 +92,7 @@ function MobilePlayer({ song, player, isPlaying, shuffle, setShuffle, repeatMode
         <button onClick={() => setExpanded(false)} className="text-hf-text-muted"><ChevronDown size={20} /></button>
       </div>
       <div className="w-48 h-48 mx-auto bg-hf-surface rounded-2xl flex items-center justify-center mb-6">
-        <Music size={64} className="text-hf-gold/30" />
+        <Disc size={64} className="text-hf-gold/30" />
       </div>
       <div className="text-center mb-6">
         <div className="text-xl font-bold text-white">{song.title}</div>
@@ -168,7 +168,7 @@ export default function PlayerBar({ song, playlist, isPlaying, setIsPlaying, set
               {/* Song info */}
               <div className="col-span-3 flex items-center gap-3">
                 <div className="w-12 h-12 bg-hf-surface rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Music size={20} className="text-hf-gold/40" />
+                  <Disc size={20} className="text-hf-gold/30" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-white truncate">{song.title}</div>

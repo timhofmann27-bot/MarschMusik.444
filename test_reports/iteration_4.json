@@ -1,0 +1,85 @@
+{
+  "summary": "Comprehensive testing of 444.HEIMAT-FUNK Music metadata bug fix. Backend: 10/10 tests passed (100%). Frontend: All pages display correct metadata (title, artist, duration in mm:ss format). The bug where UUIDs were displayed as song titles has been fixed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_metadata_fix.py",
+    "/app/test_reports/pytest/pytest_metadata_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Metadata extraction now correctly uses original_filename as fallback title instead of UUID disk filename",
+    "_is_uuid_like() helper function properly detects UUID patterns to avoid displaying them as titles",
+    "Duration is stored as rounded float (2 decimal places) - verified in tests",
+    "Admin migration endpoint properly re-extracts metadata for existing songs",
+    "All frontend pages (Dashboard, Bibliothek, Verlauf, Favoriten, Suche) use Disc icon from lucide-react as cover placeholder",
+    "formatDuration() function correctly formats seconds to mm:ss format across all pages",
+    "Audio player bar displays correct song title and artist when playing"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_metadata_fix.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "admin_email": "admin@444hf.de",
+    "admin_password": "HeimatFunk444!",
+    "role": "admin"
+  },
+  "seed_data_creation": "Created test MP3 files with ID3 tags using ffmpeg for upload testing, cleaned up after tests",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Metadata bug fix verified. The existing song 'KRIEG - DEUTSCHE VITA (2)' by 'DEUTSCHE VITA' displays correctly with duration 2:51 (171.76s). Upload endpoint extracts ID3 tags properly. Admin migration endpoint works. All UI pages show Disc icon placeholder and mm:ss duration format.",
+  "features_tested": {
+    "backend_metadata_fix": {
+      "POST /api/songs/upload - ID3 tag extraction": "PASS - Title, artist, album extracted from ID3 tags",
+      "POST /api/songs/upload - Filename fallback": "PASS - Uses original filename as title when no ID3 tags",
+      "POST /api/songs/upload - Form data override": "PASS - Form data can override extracted metadata",
+      "GET /api/songs - Metadata fields": "PASS - Returns title, artist, duration, album (no UUIDs)",
+      "POST /api/admin/migrate-metadata - Auth required": "PASS - Returns 401 without auth",
+      "POST /api/admin/migrate-metadata - Admin only": "PASS - Works for admin users",
+      "Duration format": "PASS - Stored as rounded float (2 decimal places)"
+    },
+    "frontend_metadata_display": {
+      "Dashboard song cards": "PASS - Shows title 'KRIEG - DEUTSCHE VITA (2)', artist 'DEUTSCHE VITA', duration '2:51', Disc icon",
+      "Bibliothek track rows": "PASS - Shows title, artist, album 'Unbekannt', duration '2:51', Disc icon",
+      "Audio player bar": "PASS - Shows title, artist, duration '0:00/2:51', Disc icon",
+      "Verlauf history": "PASS - Shows title, artist, play count '1x', duration '2:51', Disc icon",
+      "Suche search results": "PASS - Shows title, artist, duration, Disc icon"
+    }
+  },
+  "api_endpoints_tested": {
+    "GET /api/health": "200 OK",
+    "POST /api/auth/login": "200 OK - Sets httpOnly cookies",
+    "GET /api/songs": "200 OK - Returns songs with proper metadata",
+    "POST /api/songs/upload": "200 OK - Extracts ID3 metadata correctly",
+    "POST /api/admin/migrate-metadata": "200 OK - Admin can trigger migration"
+  },
+  "ui_tests": {
+    "login_works": true,
+    "dashboard_shows_metadata": true,
+    "bibliothek_shows_metadata": true,
+    "audio_player_shows_metadata": true,
+    "verlauf_shows_metadata": true,
+    "suche_shows_metadata": true,
+    "disc_icon_used_as_placeholder": true,
+    "duration_formatted_mm_ss": true,
+    "no_uuid_displayed_as_title": true
+  },
+  "verified_bug_fixes": [
+    "Song titles no longer display UUIDs - now show actual ID3 tag title or original filename",
+    "Artist field shows actual artist from ID3 tags, not 'Unbekannt' when available",
+    "Duration displayed in mm:ss format (e.g., '2:51') instead of raw seconds",
+    "Disc icon from lucide-react used as cover art placeholder instead of generic Music icon",
+    "Songs with owner_id: None are auto-migrated to admin user on startup"
+  ]
+}

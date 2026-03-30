@@ -221,9 +221,25 @@ TAG_EXTRACTORS = {
 }
 
 
-def extract_metadata(file_path: Path) -> dict:
+def _is_uuid_like(text: str) -> bool:
+    """Check if text looks like a UUID (used as filename on disk)."""
+    import re
+    return bool(re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', text, re.IGNORECASE))
+
+
+def extract_metadata(file_path: Path, original_filename: str = None) -> dict:
+    """Extract audio metadata. Uses original_filename as title fallback instead of UUID disk name."""
+    if original_filename:
+        fallback_title = Path(original_filename).stem
+    else:
+        fallback_title = file_path.stem
+
+    # If fallback is still UUID-like, clean it up
+    if _is_uuid_like(fallback_title):
+        fallback_title = "Unbekannter Titel"
+
     metadata = {
-        "title": file_path.stem,
+        "title": fallback_title,
         "artist": "Unbekannt",
         "album": "Unbekannt",
         "genre": "Unbekannt",
@@ -239,7 +255,7 @@ def extract_metadata(file_path: Path) -> dict:
         extractor = TAG_EXTRACTORS.get(ext)
         if extractor:
             extractor(audio, metadata)
-        metadata["duration"] = audio.info.length
+        metadata["duration"] = round(audio.info.length, 2)
     except Exception as e:
         logger.error(f"Error extracting metadata from {file_path.name}: {e}")
     return metadata
@@ -444,7 +460,7 @@ async def upload_song(
         content = await file.read()
         await out_file.write(content)
 
-    metadata = extract_metadata(file_path)
+    metadata = extract_metadata(file_path, original_filename=file.filename)
     if title:
         metadata["title"] = title
     if artist:
@@ -850,6 +866,65 @@ async def get_history_stats(request: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# ADMIN: METADATA MIGRATION
+# ═══════════════════════════════════════════════════════════════════════
+
+@api_router.post("/admin/migrate-metadata")
+async def migrate_metadata(request: Request):
+    """Re-extract metadata for all songs with UUID-like titles or missing durations."""
+    user = await get_current_user(request)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Nur Admins erlaubt")
+    count = await _run_metadata_migration()
+    return {"message": f"{count} Songs aktualisiert"}
+
+
+async def _run_metadata_migration() -> int:
+    """Internal migration: fix UUID titles, missing durations, 'Unbekannt' artists, and orphaned songs."""
+    songs = await db.songs.find({}, {"_id": 0}).to_list(None)
+    updated = 0
+
+    # Get admin user for assigning orphaned songs
+    admin = await db.users.find_one({"role": "admin"})
+    admin_id = str(admin["_id"]) if admin else None
+
+    for song in songs:
+        file_path = Path(song.get("file_path", ""))
+        if not file_path.exists():
+            continue
+        original_filename = song.get("filename", "")
+        new_meta = extract_metadata(file_path, original_filename=original_filename)
+
+        update_fields = {}
+        current_title = song.get("title", "")
+        # Fix UUID-like titles
+        if _is_uuid_like(current_title) or current_title == file_path.stem:
+            update_fields["title"] = new_meta["title"]
+        # Fix missing/zero durations or unrounded durations
+        current_dur = song.get("duration", 0)
+        if not current_dur or current_dur == 0:
+            update_fields["duration"] = new_meta["duration"]
+        elif current_dur != round(current_dur, 2):
+            update_fields["duration"] = round(current_dur, 2)
+        # Fix 'Unbekannt' artist if better data available
+        if song.get("artist") == "Unbekannt" and new_meta["artist"] != "Unbekannt":
+            update_fields["artist"] = new_meta["artist"]
+        if song.get("album") == "Unbekannt" and new_meta["album"] != "Unbekannt":
+            update_fields["album"] = new_meta["album"]
+        if song.get("genre") == "Unbekannt" and new_meta["genre"] != "Unbekannt":
+            update_fields["genre"] = new_meta["genre"]
+        # Fix orphaned songs (no owner_id)
+        if not song.get("owner_id") and admin_id:
+            update_fields["owner_id"] = admin_id
+
+        if update_fields:
+            await db.songs.update_one({"id": song["id"]}, {"$set": update_fields})
+            updated += 1
+            logger.info(f"Migrated song '{song['id']}': {update_fields}")
+    return updated
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # APP SETUP
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -908,6 +983,14 @@ async def startup():
             logger.info("Admin password updated")
     except Exception as e:
         logger.warning(f"Admin seeding issue: {e}")
+
+    # Auto-migrate metadata for songs with UUID titles or missing data
+    try:
+        migrated = await _run_metadata_migration()
+        if migrated > 0:
+            logger.info(f"Auto-migrated metadata for {migrated} songs")
+    except Exception as e:
+        logger.warning(f"Metadata migration issue: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

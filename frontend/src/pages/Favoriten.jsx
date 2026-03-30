@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { songsApi } from '../api/musicApi';
-import { Heart, Play, Music } from 'lucide-react';
+import { Heart, Play, Music, Disc } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeIn = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
@@ -62,7 +62,7 @@ export default function Favoriten({ playSong }) {
               <Play size={16} className="text-hf-gold mx-auto" />
             </button>
             <div className="w-10 h-10 bg-hf-surface rounded-lg flex items-center justify-center flex-shrink-0">
-              <Music size={16} className="text-hf-border" />
+              <Disc size={18} className="text-hf-gold/25" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-white truncate">{song.title}</div>
