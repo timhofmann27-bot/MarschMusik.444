@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Play, Download, Trash2, Edit2, Heart, X } from 'lucide-react';
 import { deleteSong, downloadSong, updateSong, toggleLike } from '../api/musicApi';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -26,9 +28,10 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
     if (window.confirm('Track wirklich löschen?')) {
       try {
         await deleteSong(song.id);
+        toast.success('✓ Track gelöscht');
         if (onUpdate) onUpdate();
       } catch (error) {
-        console.error('Fehler beim Löschen:', error);
+        toast.error('✗ Löschen fehlgeschlagen');
       }
     }
   };
@@ -36,8 +39,9 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
   const handleDownload = async () => {
     try {
       await downloadSong(song.id, song.filename);
+      toast.success('✓ Download gestartet');
     } catch (error) {
-      console.error('Fehler beim Download:', error);
+      toast.error('✗ Download fehlgeschlagen');
     }
   };
   
@@ -52,20 +56,25 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
       
       if (Object.keys(updatePayload).length > 0) {
         await updateSong(song.id, updatePayload);
+        toast.success('✓ Metadaten aktualisiert');
         if (onUpdate) onUpdate();
       }
       setIsEditDialogOpen(false);
     } catch (error) {
-      console.error('Fehler beim Aktualisieren:', error);
+      toast.error('✗ Aktualisierung fehlgeschlagen');
     }
   };
   
   const handleLike = async () => {
+    // Optimistic update
+    setLikes(prev => prev + 1);
+    
     try {
       const result = await toggleLike(song.id);
       setLikes(result.likes);
     } catch (error) {
-      console.error('Fehler beim Liken:', error);
+      setLikes(prev => prev - 1);
+      toast.error('✗ Like fehlgeschlagen');
     }
   };
   
@@ -77,7 +86,12 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
   
   return (
     <>
-      <div className="bg-black/50 border border-military-green/30 p-3 md:p-4 glow-border group" data-testid={`song-card-${song.id}`}>
+      <motion.div 
+        className="bg-black/50 border border-military-green/30 p-3 md:p-4 glow-border group" 
+        data-testid={`song-card-${song.id}`}
+        whileHover={{ scale: 1.02, borderColor: 'rgba(0, 255, 65, 0.5)' }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
         {/* Cover/Icon */}
         <div className="relative mb-3 md:mb-4">
           <div className="w-full aspect-square bg-military-green/10 border border-military-green/30 flex items-center justify-center">
@@ -159,7 +173,7 @@ const SongCard = ({ song, onPlay, onUpdate, onRemove, showRemove = false }) => {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
       
       {/* Edit Dialog - Mobile Optimized */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

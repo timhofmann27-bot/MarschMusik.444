@@ -3,6 +3,8 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, CheckCircle, AlertCircle, Music, X } from 'lucide-react';
 import { uploadSong } from '../api/musicApi';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 const BYTES_PER_KB = 1024;
 const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
@@ -66,6 +68,8 @@ const UploadStation = () => {
       
       const result = await uploadSong(formData);
       
+      toast.success(`✓ ${result.title} erfolgreich hochgeladen!`);
+      
       setUploadedFiles(prev => [...prev, { ...result, status: 'success' }]);
       setCurrentFile(null);
       setMetadata({
@@ -76,7 +80,7 @@ const UploadStation = () => {
         year: ''
       });
     } catch (error) {
-      console.error('Upload Fehler:', error);
+      toast.error('✗ Upload fehlgeschlagen');
       setUploadedFiles(prev => [...prev, { 
         filename: currentFile.name, 
         status: 'error',

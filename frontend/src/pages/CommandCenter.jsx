@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Activity, Music, HardDrive, TrendingUp } from 'lucide-react';
 import { getSongs, getStats } from '../api/musicApi';
 import SongCard from '../components/SongCard';
+import SongCardSkeleton from '../components/SongCardSkeleton';
+import { motion } from 'framer-motion';
 
 const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   const [stats, setStats] = useState(null);
@@ -54,41 +56,50 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
     },
   ];
   
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-military-green text-lg md:text-xl font-mono">LADE DATEN...</div>
-      </div>
-    );
-  }
-  
   return (
     <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 military-grid" data-testid="command-center">
       {/* Header */}
-      <div className="mb-4 md:mb-8 scanlines">
+      <motion.div 
+        className="mb-4 md:mb-8 scanlines"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <h1 className="text-2xl md:text-4xl font-bold text-military-green terminal-text mb-1 md:mb-2 tracking-wider">
           KOMMANDO ZENTRALE
         </h1>
         <p className="text-xs md:text-base text-military-green/60 font-mono">SYSTEM STATUS: OPERATIONSBEREIT</p>
-      </div>
+      </motion.div>
       
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-8">
-        {statCards.map((stat) => {
+        {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-black/50 border border-military-green/30 p-3 md:p-6 glow-border hud-corner">
+            <motion.div 
+              key={stat.label} 
+              className="bg-black/50 border border-military-green/30 p-3 md:p-6 glow-border hud-corner"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1, duration: 0.3 }}
+              whileHover={{ scale: 1.02 }}
+            >
               <div className="flex items-center justify-between mb-2 md:mb-4">
                 <Icon className={`w-6 h-6 md:w-8 md:h-8 ${stat.color}`} />
                 <div className="status-led"></div>
               </div>
-              <div className="text-xl md:text-3xl font-bold text-military-green font-mono mb-1">
-                {stat.value}
-              </div>
+              <motion.div 
+                className="text-xl md:text-3xl font-bold text-military-green font-mono mb-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.1 + 0.2 }}
+              >
+                {loading ? '---' : stat.value}
+              </motion.div>
               <div className="text-xs md:text-sm text-military-green/60 font-mono tracking-wider">
                 {stat.label}
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -98,25 +109,41 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
         <h2 className="text-xl md:text-2xl font-bold text-military-green terminal-text mb-3 md:mb-4 tracking-wider">
           KÜRZLICH HINZUGEFÜGT
         </h2>
-        {recentSongs.length === 0 ? (
-          <div className="bg-black/50 border border-military-green/30 p-8 md:p-12 text-center">
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SongCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : recentSongs.length === 0 ? (
+          <motion.div 
+            className="bg-black/50 border border-military-green/30 p-8 md:p-12 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             <Music className="w-12 h-12 md:w-16 md:h-16 text-military-green/30 mx-auto mb-3 md:mb-4" />
             <p className="text-sm md:text-base text-military-green/60 font-mono">KEINE TRACKS VERFÜGBAR</p>
             <p className="text-xs md:text-sm text-military-green/40 font-mono mt-2">LADE MUSIK HOCH UM ZU BEGINNEN</p>
-          </div>
+          </motion.div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4">
-            {recentSongs.map((song) => (
-              <SongCard 
-                key={song.id} 
-                song={song} 
-                onPlay={(song) => {
-                  setCurrentSong(song);
-                  setPlaylist(recentSongs);
-                  setIsPlaying(true);
-                }}
-                onUpdate={loadData}
-              />
+            {recentSongs.map((song, index) => (
+              <motion.div
+                key={song.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+              >
+                <SongCard 
+                  song={song} 
+                  onPlay={(song) => {
+                    setCurrentSong(song);
+                    setPlaylist(recentSongs);
+                    setIsPlaying(true);
+                  }}
+                  onUpdate={loadData}
+                />
+              </motion.div>
             ))}
           </div>
         )}
