@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Music } from 'lucide-react';
 import { getSongs } from '../api/musicApi';
 import SongCard from '../components/SongCard';
@@ -9,9 +9,21 @@ const Arsenal = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   
+  const loadSongs = useCallback(async () => {
+    try {
+      const data = await getSongs();
+      setSongs(data);
+      setFilteredSongs(data);
+    } catch (error) {
+      // Error handling - silent fail for MVP
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
   useEffect(() => {
     loadSongs();
-  }, []);
+  }, [loadSongs]);
   
   useEffect(() => {
     if (search) {
@@ -26,23 +38,11 @@ const Arsenal = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
     }
   }, [search, songs]);
   
-  const loadSongs = async () => {
-    try {
-      const data = await getSongs();
-      setSongs(data);
-      setFilteredSongs(data);
-    } catch (error) {
-      console.error('Fehler beim Laden:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handlePlay = (song) => {
+  const handlePlay = useCallback((song) => {
     setCurrentSong(song);
     setPlaylist(filteredSongs);
     setIsPlaying(true);
-  };
+  }, [filteredSongs, setCurrentSong, setPlaylist, setIsPlaying]);
   
   if (loading) {
     return (

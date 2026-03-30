@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Download, ChevronUp, ChevronDown } from 'lucide-react';
 import { downloadSong, streamSong } from '../api/musicApi';
 import WaveSurfer from 'wavesurfer.js';
@@ -11,6 +11,24 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
   const [isExpanded, setIsExpanded] = useState(false);
   const waveformRef = useRef(null);
   const wavesurfer = useRef(null);
+  
+  const handleNext = useCallback(() => {
+    const currentIndex = playlist.findIndex(s => s.id === song.id);
+    if (currentIndex < playlist.length - 1) {
+      setCurrentSong(playlist[currentIndex + 1]);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
+    }
+  }, [playlist, song, setCurrentSong, setIsPlaying]);
+  
+  const handlePrevious = useCallback(() => {
+    const currentIndex = playlist.findIndex(s => s.id === song.id);
+    if (currentIndex > 0) {
+      setCurrentSong(playlist[currentIndex - 1]);
+      setIsPlaying(true);
+    }
+  }, [playlist, song, setCurrentSong, setIsPlaying]);
   
   useEffect(() => {
     if (waveformRef.current && song) {
@@ -51,7 +69,7 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
         }
       };
     }
-  }, [song]);
+  }, [song, volume, isPlaying, handleNext]);
   
   useEffect(() => {
     if (wavesurfer.current) {
@@ -71,24 +89,6 @@ const AudioPlayer = ({ song, playlist, isPlaying, setIsPlaying, setCurrentSong }
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
-  };
-  
-  const handleNext = () => {
-    const currentIndex = playlist.findIndex(s => s.id === song.id);
-    if (currentIndex < playlist.length - 1) {
-      setCurrentSong(playlist[currentIndex + 1]);
-      setIsPlaying(true);
-    } else {
-      setIsPlaying(false);
-    }
-  };
-  
-  const handlePrevious = () => {
-    const currentIndex = playlist.findIndex(s => s.id === song.id);
-    if (currentIndex > 0) {
-      setCurrentSong(playlist[currentIndex - 1]);
-      setIsPlaying(true);
-    }
   };
   
   const formatTime = (seconds) => {

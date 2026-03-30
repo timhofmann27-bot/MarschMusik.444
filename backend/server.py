@@ -276,7 +276,7 @@ async def update_song(song_id: str, update_data: SongUpdate):
         raise HTTPException(status_code=404, detail="Song nicht gefunden")
     
     # Update fields
-    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    update_dict = {k: v for k, v in update_data.model_dump().items() if v != None}
     
     if update_dict:
         await db.songs.update_one({"id": song_id}, {"$set": update_dict})
@@ -406,7 +406,7 @@ async def update_playlist(playlist_id: str, update_data: PlaylistUpdate):
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist nicht gefunden")
     
-    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    update_dict = {k: v for k, v in update_data.model_dump().items() if v != None}
     
     if update_dict:
         await db.playlists.update_one({"id": playlist_id}, {"$set": update_dict})

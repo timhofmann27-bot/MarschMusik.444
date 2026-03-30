@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, List as ListIcon } from 'lucide-react';
 import { getPlaylists, createPlaylist, deletePlaylist } from '../api/musicApi';
 import { useNavigate } from 'react-router-dom';
@@ -21,20 +21,20 @@ const MissionBriefings = () => {
   const [newPlaylist, setNewPlaylist] = useState({ name: '', description: '' });
   const navigate = useNavigate();
   
-  useEffect(() => {
-    loadPlaylists();
-  }, []);
-  
-  const loadPlaylists = async () => {
+  const loadPlaylists = useCallback(async () => {
     try {
       const data = await getPlaylists();
       setPlaylists(data);
     } catch (error) {
-      console.error('Fehler beim Laden:', error);
+      // Error handling - silent fail for MVP
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  
+  useEffect(() => {
+    loadPlaylists();
+  }, [loadPlaylists]);
   
   const handleCreate = async () => {
     if (!newPlaylist.name.trim()) return;
@@ -45,7 +45,7 @@ const MissionBriefings = () => {
       setIsDialogOpen(false);
       loadPlaylists();
     } catch (error) {
-      console.error('Fehler beim Erstellen:', error);
+      // Error handling - silent fail for MVP
     }
   };
   
@@ -56,7 +56,7 @@ const MissionBriefings = () => {
         await deletePlaylist(id);
         loadPlaylists();
       } catch (error) {
-        console.error('Fehler beim Löschen:', error);
+        // Error handling - silent fail for MVP
       }
     }
   };

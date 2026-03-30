@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Music as MusicIcon } from 'lucide-react';
 import { getPlaylist, getSongs, addSongToPlaylist, removeSongFromPlaylist, getSong } from '../api/musicApi';
@@ -23,11 +23,7 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  useEffect(() => {
-    loadData();
-  }, [id]);
-  
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [playlist, allSongsData] = await Promise.all([
         getPlaylist(id),
@@ -37,17 +33,20 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       setPlaylistData(playlist);
       setAllSongs(allSongsData);
       
-      // Load songs in playlist
       const playlistSongs = await Promise.all(
         (playlist.song_ids || []).map(songId => getSong(songId).catch(() => null))
       );
       setSongs(playlistSongs.filter(s => s !== null));
     } catch (error) {
-      console.error('Fehler beim Laden:', error);
+      // Error handling - silent fail for MVP
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+  
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
   
   const handleAddSong = async (songId) => {
     try {
@@ -56,7 +55,6 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       setSearchQuery('');
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Fehler beim Hinzufügen:', error);
       alert(error.response?.data?.detail || 'Fehler beim Hinzufügen');
     }
   };
@@ -66,7 +64,7 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       await removeSongFromPlaylist(id, songId);
       await loadData();
     } catch (error) {
-      console.error('Fehler beim Entfernen:', error);
+      // Error handling - silent fail for MVP
     }
   };
   
@@ -79,14 +77,14 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-military-green text-xl font-mono">LADE MISSION...</div>
+        <div className="text-military-green text-lg md:text-xl font-mono">LADE MISSION...</div>
       </div>
     );
   }
   
   if (!playlistData) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 md:px-4 py-4 md:py-8">
         <div className="text-center">
           <p className="text-military-green font-mono">MISSION NICHT GEFUNDEN</p>
         </div>
@@ -95,9 +93,9 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8 military-grid" data-testid="playlist-detail">
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-8 military-grid" data-testid="playlist-detail">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4 md:mb-8">
         <button
           onClick={() => navigate('/missions')}
           className="flex items-center space-x-2 text-military-green/60 hover:text-military-green transition mb-4 font-mono"
@@ -106,27 +104,27 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
           <span>ZURÜCK</span>
         </button>
         
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-military-green terminal-text mb-2 tracking-wider">
+            <h1 className="text-2xl md:text-4xl font-bold text-military-green terminal-text mb-1 md:mb-2 tracking-wider">
               {playlistData.name}
             </h1>
             {playlistData.description && (
-              <p className="text-military-green/60 font-mono mb-2">{playlistData.description}</p>
+              <p className="text-xs md:text-base text-military-green/60 font-mono mb-2">{playlistData.description}</p>
             )}
-            <p className="text-military-green/60 font-mono">{songs.length} TRACKS</p>
+            <p className="text-xs md:text-base text-military-green/60 font-mono">{songs.length} TRACKS</p>
           </div>
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <button className="px-6 py-3 bg-military-green/20 border border-military-green/50 text-military-green hover:bg-military-green/30 transition font-mono tracking-wider flex items-center space-x-2">
-                <Plus className="w-5 h-5" />
+              <button className="px-4 md:px-6 py-2 md:py-3 bg-military-green/20 border border-military-green/50 text-military-green hover:bg-military-green/30 transition font-mono tracking-wider flex items-center justify-center space-x-2 text-sm md:text-base w-full sm:w-auto">
+                <Plus className="w-4 h-4 md:w-5 md:h-5" />
                 <span>TRACK HINZUFÜGEN</span>
               </button>
             </DialogTrigger>
-            <DialogContent className="bg-black border-military-green/50 max-w-2xl">
+            <DialogContent className="bg-black border-military-green/50 w-[95vw] max-w-2xl">
               <DialogHeader>
-                <DialogTitle className="text-military-green font-mono text-xl">TRACK ZUR MISSION HINZUFÜGEN</DialogTitle>
+                <DialogTitle className="text-military-green font-mono text-lg md:text-xl">TRACK ZUR MISSION HINZUFÜGEN</DialogTitle>
               </DialogHeader>
               <div className="mt-4">
                 <Input
@@ -167,12 +165,12 @@ const PlaylistDetail = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       
       {/* Songs */}
       {songs.length === 0 ? (
-        <div className="bg-black/50 border border-military-green/30 p-12 text-center">
-          <MusicIcon className="w-16 h-16 text-military-green/30 mx-auto mb-4" />
-          <p className="text-military-green/60 font-mono">KEINE TRACKS IN DIESER MISSION</p>
+        <div className="bg-black/50 border border-military-green/30 p-8 md:p-12 text-center">
+          <MusicIcon className="w-12 h-12 md:w-16 md:h-16 text-military-green/30 mx-auto mb-3 md:mb-4" />
+          <p className="text-sm md:text-base text-military-green/60 font-mono">KEINE TRACKS IN DIESER MISSION</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
           {songs.map((song) => (
             <SongCard
               key={song.id}

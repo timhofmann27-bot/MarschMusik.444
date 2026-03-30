@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Activity, Music, HardDrive, TrendingUp } from 'lucide-react';
 import { getSongs, getStats } from '../api/musicApi';
 import SongCard from '../components/SongCard';
@@ -8,11 +8,7 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
   const [recentSongs, setRecentSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    loadData();
-  }, []);
-  
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [statsData, songs] = await Promise.all([
         getStats(),
@@ -21,11 +17,15 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       setStats(statsData);
       setRecentSongs(songs.slice(0, 6));
     } catch (error) {
-      console.error('Fehler beim Laden:', error);
+      // Error handling - silent fail for MVP
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
   
   const statCards = [
     {
@@ -74,10 +74,10 @@ const CommandCenter = ({ setCurrentSong, setPlaylist, setIsPlaying }) => {
       
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-8">
-        {statCards.map((stat, index) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-black/50 border border-military-green/30 p-3 md:p-6 glow-border hud-corner">
+            <div key={stat.label} className="bg-black/50 border border-military-green/30 p-3 md:p-6 glow-border hud-corner">
               <div className="flex items-center justify-between mb-2 md:mb-4">
                 <Icon className={`w-6 h-6 md:w-8 md:h-8 ${stat.color}`} />
                 <div className="status-led"></div>

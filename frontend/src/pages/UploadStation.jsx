@@ -4,6 +4,9 @@ import { Upload, CheckCircle, AlertCircle, Music, X } from 'lucide-react';
 import { uploadSong } from '../api/musicApi';
 import { useNavigate } from 'react-router-dom';
 
+const BYTES_PER_KB = 1024;
+const BYTES_PER_MB = BYTES_PER_KB * BYTES_PER_KB;
+
 const UploadStation = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -17,6 +20,16 @@ const UploadStation = () => {
   });
   const navigate = useNavigate();
   
+  const getBorderClassName = () => {
+    if (isDragActive) {
+      return 'border-2 border-dashed p-6 md:p-12 text-center cursor-pointer transition-all touch-manipulation border-military-green bg-military-green/10';
+    }
+    if (currentFile) {
+      return 'border-2 border-dashed p-6 md:p-12 text-center cursor-pointer transition-all touch-manipulation border-military-green/50 bg-military-green/5';
+    }
+    return 'border-2 border-dashed p-6 md:p-12 text-center cursor-pointer transition-all touch-manipulation border-military-green/30 hover:border-military-green/50 active:border-military-green/50';
+  };
+  
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
@@ -26,7 +39,7 @@ const UploadStation = () => {
         title: file.name.replace(/\.[^/.]+$/, '')
       }));
     }
-  }, []);
+  }, [setCurrentFile, setMetadata]);
   
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -106,13 +119,7 @@ const UploadStation = () => {
           
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed p-6 md:p-12 text-center cursor-pointer transition-all touch-manipulation ${
-              isDragActive 
-                ? 'border-military-green bg-military-green/10' 
-                : currentFile
-                ? 'border-military-green/50 bg-military-green/5'
-                : 'border-military-green/30 hover:border-military-green/50 active:border-military-green/50'
-            }`}
+            className={getBorderClassName()}
           >
             <input {...getInputProps()} />
             {currentFile ? (
@@ -121,7 +128,7 @@ const UploadStation = () => {
                 <div>
                   <p className="text-sm md:text-base text-military-green font-mono mb-1 break-all">{currentFile.name}</p>
                   <p className="text-xs md:text-sm text-military-green/60 font-mono">
-                    {(currentFile.size / (1024 * 1024)).toFixed(2)} MB
+                    {(currentFile.size / BYTES_PER_MB).toFixed(2)} MB
                   </p>
                 </div>
                 <button
@@ -237,8 +244,8 @@ const UploadStation = () => {
               </div>
             ) : (
               <div className="space-y-2 md:space-y-3">
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-start space-x-2 md:space-x-3 p-2 md:p-3 bg-black/30 border border-military-green/20">
+                {uploadedFiles.map((file) => (
+                  <div key={file.id || file.filename} className="flex items-start space-x-2 md:space-x-3 p-2 md:p-3 bg-black/30 border border-military-green/20">
                     {file.status === 'success' ? (
                       <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-military-green flex-shrink-0 mt-1" />
                     ) : (
