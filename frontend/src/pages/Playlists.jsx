@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { playlistsApi } from '../api/musicApi';
-import { ListMusic, Plus, Trash2, Lock, Globe } from 'lucide-react';
+import { ListMusic, Plus, Trash2, Lock, Globe, Share2, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -30,7 +30,7 @@ export default function Playlists() {
     e.preventDefault();
     if (!name.trim()) return;
     try {
-      const { data } = await playlistsApi.create({ name, description: desc, is_public: isPublic });
+      const { data } = await playlistsApi.create({ name, description: desc, is_public: isPublic, is_collaborative: false });
       setPlaylists(prev => [...prev, data]);
       setName(''); setDesc(''); setShowCreate(false);
       toast.success('Playlist erstellt!');
@@ -99,8 +99,10 @@ export default function Playlists() {
               <div className="w-14 h-14 bg-gradient-to-br from-hf-gold/20 to-hf-gold/5 rounded-lg flex items-center justify-center">
                 <ListMusic size={24} className="text-hf-gold" />
               </div>
-              <div className="flex gap-1">
-                {pl.is_public ? <Globe size={14} className="text-hf-text-muted" /> : <Lock size={14} className="text-hf-text-muted" />}
+              <div className="flex gap-1 items-center">
+                {pl.is_shared && <Share2 size={13} className="text-hf-gold" />}
+                {pl.is_collaborative && <Users size={13} className="text-emerald-400" />}
+                {pl.is_public ? <Globe size={13} className="text-hf-text-muted" /> : <Lock size={13} className="text-hf-text-muted" />}
                 <button onClick={(e) => handleDelete(pl.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all" data-testid={`playlist-delete-${pl.id}`}>
                   <Trash2 size={14} className="text-hf-text-muted hover:text-red-400" />
                 </button>

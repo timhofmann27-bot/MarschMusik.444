@@ -46,6 +46,11 @@ export const playlistsApi = {
   delete: (id) => api.delete(`/playlists/${id}`),
   addSong: (plId, songId) => api.post(`/playlists/${plId}/songs/${songId}`),
   removeSong: (plId, songId) => api.delete(`/playlists/${plId}/songs/${songId}`),
+  toggleShare: (plId) => api.post(`/playlists/${plId}/share`),
+  addCollaborator: (plId, email) => api.post(`/playlists/${plId}/collaborators/${encodeURIComponent(email)}`),
+  removeCollaborator: (plId, email) => api.delete(`/playlists/${plId}/collaborators/${encodeURIComponent(email)}`),
+  getCollaborators: (plId) => api.get(`/playlists/${plId}/collaborators`),
+  getShared: (shareId) => api.get(`/shared/${shareId}`),
 };
 
 // ─── Other ────────────────────────────────────────────────────────

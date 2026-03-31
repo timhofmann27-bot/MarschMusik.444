@@ -135,11 +135,13 @@ class PlaylistCreate(BaseModel):
     name: str
     description: str = ""
     is_public: bool = False
+    is_collaborative: bool = False
 
 class PlaylistUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     is_public: Optional[bool] = None
+    is_collaborative: Optional[bool] = None
 
 # ─── Helper: format user for response ────────────────────────────────
 
@@ -276,6 +278,11 @@ def format_playlist(pl: dict) -> dict:
     p = {k: v for k, v in pl.items() if k != "_id"}
     if isinstance(p.get("created_date"), datetime):
         p["created_date"] = p["created_date"].isoformat()
+    # Ensure share fields exist
+    p.setdefault("share_id", None)
+    p.setdefault("is_shared", False)
+    p.setdefault("is_collaborative", False)
+    p.setdefault("collaborators", [])
     return p
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -627,6 +634,10 @@ async def create_playlist(data: PlaylistCreate, request: Request):
         "name": data.name,
         "description": data.description,
         "is_public": data.is_public,
+        "is_collaborative": data.is_collaborative,
+        "share_id": None,
+        "is_shared": False,
+        "collaborators": [],
         "cover_url": "",
         "song_ids": [],
         "created_date": datetime.now(timezone.utc).isoformat(),
@@ -638,7 +649,11 @@ async def create_playlist(data: PlaylistCreate, request: Request):
 @api_router.get("/playlists")
 async def get_playlists(request: Request):
     user = await get_current_user(request)
-    playlists = await db.playlists.find({"owner_id": user["_id"]}, {"_id": 0}).to_list(500)
+    # Own playlists + playlists where user is collaborator
+    playlists = await db.playlists.find(
+        {"$or": [{"owner_id": user["_id"]}, {"collaborators": user["_id"]}]},
+        {"_id": 0}
+    ).to_list(500)
     return [format_playlist(p) for p in playlists]
 
 
@@ -648,20 +663,30 @@ async def get_playlist(playlist_id: str, request: Request):
     pl = await db.playlists.find_one({"id": playlist_id}, {"_id": 0})
     if not pl:
         raise HTTPException(status_code=404, detail="Playlist nicht gefunden")
+    # Access check: owner, collaborator, or shared
+    is_owner = pl.get("owner_id") == user["_id"]
+    is_collaborator = user["_id"] in pl.get("collaborators", [])
+    is_shared = pl.get("is_shared", False)
+    if not (is_owner or is_collaborator or is_shared):
+        raise HTTPException(status_code=403, detail="Kein Zugriff auf diese Playlist")
     # Get songs in playlist
     songs = []
     if pl.get("song_ids"):
         songs_cursor = await db.songs.find({"id": {"$in": pl["song_ids"]}}, {"_id": 0}).to_list(500)
-        # Maintain order
         song_map = {s["id"]: format_song(s) for s in songs_cursor}
         songs = [song_map[sid] for sid in pl["song_ids"] if sid in song_map]
-        # Check likes
         user_likes = await db.likes.find({"user_id": user["_id"]}, {"music_id": 1}).to_list(5000)
         liked_ids = {like["music_id"] for like in user_likes}
         for s in songs:
             s["is_liked"] = s["id"] in liked_ids
     result = format_playlist(pl)
     result["songs"] = songs
+    result["is_owner"] = is_owner
+    result["is_collaborator"] = is_collaborator
+    # Get owner info
+    if not is_owner:
+        owner = await db.users.find_one({"_id": ObjectId(pl["owner_id"])}) if pl.get("owner_id") else None
+        result["owner_name"] = owner.get("username", "Unbekannt") if owner else "Unbekannt"
     return result
 
 
@@ -690,9 +715,15 @@ async def delete_playlist(playlist_id: str, request: Request):
 @api_router.post("/playlists/{playlist_id}/songs/{song_id}")
 async def add_song_to_playlist(playlist_id: str, song_id: str, request: Request):
     user = await get_current_user(request)
-    pl = await db.playlists.find_one({"id": playlist_id, "owner_id": user["_id"]})
+    pl = await db.playlists.find_one({"id": playlist_id})
     if not pl:
         raise HTTPException(status_code=404, detail="Playlist nicht gefunden")
+    # Check permission: owner or collaborator
+    is_owner = pl.get("owner_id") == user["_id"]
+    is_collaborator = user["_id"] in pl.get("collaborators", [])
+    is_collab_mode = pl.get("is_collaborative", False)
+    if not (is_owner or (is_collab_mode and is_collaborator)):
+        raise HTTPException(status_code=403, detail="Keine Berechtigung")
     song = await db.songs.find_one({"id": song_id})
     if not song:
         raise HTTPException(status_code=404, detail="Song nicht gefunden")
@@ -705,11 +736,110 @@ async def add_song_to_playlist(playlist_id: str, song_id: str, request: Request)
 @api_router.delete("/playlists/{playlist_id}/songs/{song_id}")
 async def remove_song_from_playlist(playlist_id: str, song_id: str, request: Request):
     user = await get_current_user(request)
-    pl = await db.playlists.find_one({"id": playlist_id, "owner_id": user["_id"]})
+    pl = await db.playlists.find_one({"id": playlist_id})
     if not pl:
         raise HTTPException(status_code=404, detail="Playlist nicht gefunden")
+    is_owner = pl.get("owner_id") == user["_id"]
+    is_collaborator = user["_id"] in pl.get("collaborators", [])
+    is_collab_mode = pl.get("is_collaborative", False)
+    if not (is_owner or (is_collab_mode and is_collaborator)):
+        raise HTTPException(status_code=403, detail="Keine Berechtigung")
     await db.playlists.update_one({"id": playlist_id}, {"$pull": {"song_ids": song_id}})
     return {"message": "Song aus Playlist entfernt"}
+
+
+@api_router.post("/playlists/{playlist_id}/share")
+async def toggle_share_playlist(playlist_id: str, request: Request):
+    """Toggle sharing and generate a share link."""
+    user = await get_current_user(request)
+    pl = await db.playlists.find_one({"id": playlist_id, "owner_id": user["_id"]})
+    if not pl:
+        raise HTTPException(status_code=404, detail="Playlist nicht gefunden oder keine Berechtigung")
+    is_shared = not pl.get("is_shared", False)
+    update = {"is_shared": is_shared}
+    if is_shared and not pl.get("share_id"):
+        update["share_id"] = str(uuid.uuid4())[:8]
+    await db.playlists.update_one({"id": playlist_id}, {"$set": update})
+    updated = await db.playlists.find_one({"id": playlist_id}, {"_id": 0})
+    return format_playlist(updated)
+
+
+@api_router.post("/playlists/{playlist_id}/collaborators/{user_email}")
+async def add_collaborator(playlist_id: str, user_email: str, request: Request):
+    """Add a user as collaborator by email."""
+    user = await get_current_user(request)
+    pl = await db.playlists.find_one({"id": playlist_id, "owner_id": user["_id"]})
+    if not pl:
+        raise HTTPException(status_code=404, detail="Playlist nicht gefunden oder keine Berechtigung")
+    target_user = await db.users.find_one({"email": user_email.strip().lower()})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    target_id = str(target_user["_id"])
+    if target_id == user["_id"]:
+        raise HTTPException(status_code=400, detail="Du kannst dich nicht selbst hinzufuegen")
+    if target_id in pl.get("collaborators", []):
+        raise HTTPException(status_code=400, detail="Benutzer ist bereits Mitwirkender")
+    await db.playlists.update_one({"id": playlist_id}, {
+        "$push": {"collaborators": target_id},
+        "$set": {"is_collaborative": True}
+    })
+    return {"message": f"{target_user['username']} als Mitwirkender hinzugefuegt"}
+
+
+@api_router.delete("/playlists/{playlist_id}/collaborators/{user_email}")
+async def remove_collaborator(playlist_id: str, user_email: str, request: Request):
+    """Remove a collaborator by email."""
+    user = await get_current_user(request)
+    pl = await db.playlists.find_one({"id": playlist_id, "owner_id": user["_id"]})
+    if not pl:
+        raise HTTPException(status_code=404, detail="Playlist nicht gefunden oder keine Berechtigung")
+    target_user = await db.users.find_one({"email": user_email.strip().lower()})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    target_id = str(target_user["_id"])
+    await db.playlists.update_one({"id": playlist_id}, {"$pull": {"collaborators": target_id}})
+    # If no more collaborators, disable collaborative mode
+    updated_pl = await db.playlists.find_one({"id": playlist_id})
+    if not updated_pl.get("collaborators"):
+        await db.playlists.update_one({"id": playlist_id}, {"$set": {"is_collaborative": False}})
+    return {"message": "Mitwirkender entfernt"}
+
+
+@api_router.get("/playlists/{playlist_id}/collaborators")
+async def get_collaborators(playlist_id: str, request: Request):
+    """Get collaborator details for a playlist."""
+    await get_current_user(request)
+    pl = await db.playlists.find_one({"id": playlist_id}, {"_id": 0})
+    if not pl:
+        raise HTTPException(status_code=404, detail="Playlist nicht gefunden")
+    collab_ids = pl.get("collaborators", [])
+    collabs = []
+    for cid in collab_ids:
+        u = await db.users.find_one({"_id": ObjectId(cid)})
+        if u:
+            collabs.append({"id": str(u["_id"]), "username": u["username"], "email": u["email"]})
+    return collabs
+
+
+@api_router.get("/shared/{share_id}")
+async def get_shared_playlist(share_id: str, request: Request):
+    """Get a shared playlist by its share_id. Requires auth."""
+    user = await get_current_user(request)
+    pl = await db.playlists.find_one({"share_id": share_id, "is_shared": True}, {"_id": 0})
+    if not pl:
+        raise HTTPException(status_code=404, detail="Geteilte Playlist nicht gefunden oder nicht mehr verfuegbar")
+    songs = []
+    if pl.get("song_ids"):
+        songs_cursor = await db.songs.find({"id": {"$in": pl["song_ids"]}}, {"_id": 0}).to_list(500)
+        song_map = {s["id"]: format_song(s) for s in songs_cursor}
+        songs = [song_map[sid] for sid in pl["song_ids"] if sid in song_map]
+    result = format_playlist(pl)
+    result["songs"] = songs
+    result["is_owner"] = pl.get("owner_id") == user["_id"]
+    # Get owner name
+    owner = await db.users.find_one({"_id": ObjectId(pl["owner_id"])}) if pl.get("owner_id") else None
+    result["owner_name"] = owner.get("username", "Unbekannt") if owner else "Unbekannt"
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════════════

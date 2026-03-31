@@ -13,6 +13,7 @@ import Profil from './pages/Profil';
 import KuenstlerDetail from './pages/KuenstlerDetail';
 import AlbumDetail from './pages/AlbumDetail';
 import Verlauf from './pages/Verlauf';
+import SharedPlaylistPage from './pages/SharedPlaylistPage';
 import Sidebar from './components/Sidebar';
 import MobileNav from './components/MobileNav';
 import PlayerBar from './components/AudioPlayer';
@@ -77,6 +78,7 @@ function AppRoutes() {
           <Route path="/hochladen" element={<Hochladen />} />
           <Route path="/playlists" element={<Playlists />} />
           <Route path="/playlists/:id" element={<PlaylistDetailPage playSong={playSong} />} />
+          <Route path="/shared/:shareId" element={<SharedPlaylistPage playSong={playSong} />} />
           <Route path="/favoriten" element={<Favoriten playSong={playSong} />} />
           <Route path="/suche" element={<Suche playSong={playSong} />} />
           <Route path="/profil" element={<Profil />} />
