@@ -19,16 +19,13 @@ Private Spotify-aehnliche Musikstreaming-Plattform (444.HEIMAT-FUNK Music / 444H
 - [x] Cover-Art-Placeholder: Vinyl Disc icon across all pages
 - [x] PWA Icons: Custom logo as favicon, apple-touch-icon, manifest icons
 - [x] Pre-Launch Audit Report: /app/memory/AUDIT_REPORT.md (Score 8.13/10, GO fuer MVP)
-- [x] Security Hardening: 50MB upload limit (Content-Length + body check), CORS restricted, pagination (page/limit)
-- [x] "Jetzt hoeren" Weekly Stats: WeeklyStatsCard with animated counters, progress rings, top songs/artists, new discoveries badge, play_log tracking
-- [x] Mobile-Responsive Optimization: All views optimized for 375px. Hidden row numbers/Disc icons/action buttons on mobile. Verlauf hides play count/time. Dashboard 2-col grid. PlaylistDetail responsive header.
+- [x] Security Hardening: 50MB upload limit, CORS restricted, pagination (page/limit)
+- [x] "Jetzt hoeren" Weekly Stats: WeeklyStatsCard with animated counters, progress rings, top songs/artists
+- [x] Mobile-Responsive Optimization: All views optimized for 375px
+- [x] P2 Playlist-Sharing: Toggle sharing, generate share_id, shareable link, SharedPlaylistPage at /shared/:shareId
+- [x] P2 Collaborative Playlists: Add/remove collaborators by email, collaborators can modify songs, Mitwirkende modal
 
 ## Upcoming Tasks
-- [ ] P2: Playlist-Sharing (View/Edit/Download-Rechte)
-- [ ] P2: Collaborative Playlists
-- [ ] P2: Follow/Unfollow System
-
-## Backlog
 - [ ] P3: Aktivitaetsstream, Hoerstatistiken, Genre-Browser, Empfehlungen
 - [ ] P3: HLS-Streaming, Offline-Modus, Direct Messages
 - [ ] P3: Object Storage statt lokalem Dateispeicher
